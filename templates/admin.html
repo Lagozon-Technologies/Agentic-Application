@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document & Table Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        :root {
+            /* Light Theme Colors */
+            --text-color: #333333;
+            --subheading-color: #555555;
+            --primary-color: #ffffff;
+            --secondary-color: rgba(255, 255, 255, 0.1);
+            --button-bg: rgba(255, 255, 255, 0.1);
+            --button-hover: rgba(255, 255, 255, 0.2);
+            --glass-border: rgba(255, 255, 255, 0.18);
+            --box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            --accent-color: #4f7ff7;
+            --input-bg: #ffffff;
+            --dropdown-bg: #ffffff;
+            --dropdown-text: #333333;
+            --dropdown-hover: #f5f5f5;
+            --scrollbar-thumb: #cccccc;
+            --scrollbar-track: #f1f1f1;
+        }
+
+        [data-theme="dark"] {
+            --text-color: #edf3ff;
+            --subheading-color: #97a7ca;
+            --primary-color: #121826;
+            --secondary-color: rgba(255, 255, 255, 0.05);
+            --button-bg: rgba(255, 255, 255, 0.05);
+            --button-hover: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --accent-color: #5468ff;
+            --input-bg: #1a2234;
+            --dropdown-bg: #1a2234;
+            --dropdown-text: #edf3ff;
+            --dropdown-hover: #2a3245;
+            --scrollbar-thumb: #2a3245;
+            --scrollbar-track: #1a2234;
+        }
+
+        body {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 40px;
+            background: var(--secondary-color);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--box-shadow);
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--button-bg);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--box-shadow);
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+        }
+
+        .button-group-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .button-group-grid button {
+            padding: 18px 25px;
+            font-size: 1.1rem;
+            background: var(--button-bg);
+            color: var(--text-color);
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s ease;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .button-group-grid button:hover {
+            background: var(--button-hover);
+            transform: translateY(-3px);
+        }
+
+        #selected-functionality {
+            display: none;
+            background: var(--secondary-color);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            margin-top: 30px;
+        }
+
+        #selected-functionality.active {
+            display: block;
+        }
+
+        /* Scrollable sections */
+        #show-documents-section, #get-tables-section {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        /* Scrollbar styling */
+        #show-documents-section::-webkit-scrollbar,
+        #get-tables-section::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #show-documents-section::-webkit-scrollbar-track,
+        #get-tables-section::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+            border-radius: 4px;
+        }
+
+        #show-documents-section::-webkit-scrollbar-thumb,
+        #get-tables-section::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 4px;
+        }
+
+        .document-item, .table-item {
+            background: var(--button-bg);
+            padding: 15px 20px;
+            margin: 10px 0;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .file-upload-container {
+            background: var(--input-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 2px dashed var(--glass-border);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-container:hover {
+            border-color: var(--accent-color);
+        }
+
+        #file-upload {
+            display: none;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 15px;
+            background: var(--button-bg);
+            color: var(--text-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-label:hover {
+            background: var(--button-hover);
+        }
+
+        .upload-buttons button, #actual-delete-btn {
+            padding: 12px 25px;
+            font-size: 1rem;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 0;
+        }
+
+        .upload-buttons button:hover, #actual-delete-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: var(--dropdown-bg);
+            color: var(--dropdown-text);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+
+        select:hover {
+            background-color: var(--dropdown-hover);
+        }
+
+        select option {
+            background: var(--dropdown-bg);
+            color: var(--dropdown-text);
+            padding: 12px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #upload-status {
+            display: block;
+            margin-top: 10px;
+            color: var(--text-color);
+        }
+
+        .selected-files {
+            margin-top: 15px;
+            padding: 10px;
+            background: var(--button-bg);
+            border-radius: 8px;
+            color: var(--text-color);
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="theme-toggle">
+        <span class="material-icons">light_mode</span>
+    </button>
+
+    <div class="container">
+        <section id="document-actions">
+            <div class="button-group-grid">
+                <button id="show-docs-btn">Show Documents</button>
+                <button id="get-tables-btn">Get Tables</button>
+                <button id="upload-btn">Insert Document</button>
+                <button id="delete-doc-btn">Delete Document</button>
+            </div>
+        </section>
+
+        <section id="selected-functionality">
+            <div id="show-documents-section" class="hidden"></div>
+            <div id="upload-section" class="hidden">
+                <div class="file-upload-container">
+                    <label for="file-upload" class="file-upload-label">
+                        <span class="material-icons">cloud_upload</span>
+                        <span>Choose files to upload</span>
+                    </label>
+                    <input type="file" id="file-upload" multiple>
+                    <div class="selected-files"></div>
+                </div>
+                <div class="upload-buttons">
+                    <button id="actual-upload-btn">Upload</button>
+                    <span id="upload-status"></span>
+                </div>
+                <div id="upload-result"></div>
+            </div>
+            <div id="delete-section" class="hidden">
+                <label for="doc-to-delete">Document to Delete:</label>
+                <select id="doc-to-delete"></select>
+                <button id="actual-delete-btn">Delete</button>
+                <div id="delete-result"></div>
+            </div>
+            <div id="get-tables-section" class="hidden">
+                <div id="tables-list"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const selectedSection = urlParams.get("section");
+
+            // Theme Toggle
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = themeToggle.querySelector('.material-icons');
+            const selectedFunctionality = document.getElementById('selected-functionality');
+
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+            themeIcon.textContent = savedTheme === 'dark' ? 'light_mode' : 'dark_mode';
+
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.body.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.body.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                themeIcon.textContent = newTheme === 'dark' ? 'light_mode' : 'dark_mode';
+            });
+
+            // File upload handling
+            const fileUpload = document.getElementById('file-upload');
+            const selectedFiles = document.querySelector('.selected-files');
+            
+            fileUpload.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length > 0) {
+                    selectedFiles.textContent = files.map(f => f.name).join(', ');
+                } else {
+                    selectedFiles.textContent = 'No files selected';
+                }
+            });
+
+            // Button and Section Elements
+            const showDocsBtn = document.getElementById('show-docs-btn');
+            const deleteDocBtn = document.getElementById('delete-doc-btn');
+            const uploadBtn = document.getElementById('upload-btn');
+            const getTablesBtn = document.getElementById('get-tables-btn');
+            const actualUploadBtn = document.getElementById('actual-upload-btn');
+            const actualDeleteBtn = document.getElementById('actual-delete-btn');
+
+            const showSection = document.getElementById('show-documents-section');
+            const deleteSection = document.getElementById('delete-section');
+            const uploadSection = document.getElementById('upload-section');
+            const getTablesSection = document.getElementById('get-tables-section');
+
+            const deleteResultDiv = document.getElementById('delete-result');
+            const uploadResultDiv = document.getElementById('upload-result');
+            const tablesListDiv = document.getElementById('tables-list');
+
+            const docToDeleteSelect = document.getElementById('doc-to-delete');
+
+            // Helper function for fetching data
+            async function fetchData(url, method = 'GET', body = null, headers = {}) {
+                try {
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: headers,
+                        body: body
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    return await response.json();
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    throw error;
+                }
+            }
+
+            // Function to hide all content sections
+            function hideSections() {
+                showSection.classList.add('hidden');
+                deleteSection.classList.add('hidden');
+                uploadSection.classList.add('hidden');
+                getTablesSection.classList.add('hidden');
+                selectedFunctionality.classList.remove('active');
+            }
+
+            // Show Documents Section
+            showDocsBtn.addEventListener('click', async () => {
+                hideSections();
+                showSection.classList.remove('hidden');
+                selectedFunctionality.classList.add('active');
+
+                try {
+                    const data = await fetchData('/show_documents', 'POST', `section=${selectedSection}`, {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    });
+
+                    showSection.innerHTML = '';
+
+                    if (data.length > 0) {
+                        data.forEach(doc => {
+                            const docItem = document.createElement('div');
+                            docItem.className = 'document-item';
+                            docItem.textContent = doc;
+                            showSection.appendChild(docItem);
+                        });
+                    } else {
+                        showSection.innerHTML = '<div class="document-item">No documents found</div>';
+                    }
+                } catch (error) {
+                    showSection.innerHTML = '<div class="document-item">Error fetching documents</div>';
+                }
+            });
+
+            // Show Upload Section
+            uploadBtn.addEventListener('click', () => {
+                hideSections();
+                uploadSection.classList.remove('hidden');
+                selectedFunctionality.classList.add('active');
+            });
+
+            // Handle File Upload
+            actualUploadBtn.addEventListener('click', async () => {
+                const files = document.getElementById('file-upload').files;
+
+                if (files.length === 0) {
+                    uploadResultDiv.textContent = 'Please select files to upload.';
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('section', selectedSection);
+                for (const file of files) {
+                    formData.append('files', file);
+                }
+
+                uploadResultDiv.textContent = 'Uploading...';
+
+                try {
+                    const data = await fetchData('/upload', 'POST', formData);
+                    uploadResultDiv.textContent = data.message;
+                } catch (error) {
+                    uploadResultDiv.textContent = 'Error uploading files.';
+                }
+            });
+
+            // Show Delete Section
+            deleteDocBtn.addEventListener('click', () => {
+                hideSections();
+                deleteSection.classList.remove('hidden');
+                selectedFunctionality.classList.add('active');
+
+                fetchData('/show_documents', 'POST', `section=${selectedSection}`, {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                })
+                .then(data => {
+                    docToDeleteSelect.innerHTML = '';
+                    data.forEach(doc => {
+                        const option = document.createElement('option');
+                        option.value = doc;
+                        option.textContent = doc;
+                        docToDeleteSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching documents:', error);
+                    docToDeleteSelect.innerHTML = '<option>Error loading documents</option>';
+                });
+            });
+
+            // Handle Document Deletion
+            actualDeleteBtn.addEventListener('click', async () => {
+                const docName = docToDeleteSelect.value;
+                try {
+                    const data = await fetchData('/delete_document', 'POST', `section=${selectedSection}&doc_name=${docName}`, {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    });
+                    deleteResultDiv.textContent = data.message;
+                } catch (error) {
+                    deleteResultDiv.textContent = 'Error deleting document.';
+                }
+            });
+
+            // Fetch Tables
+            getTablesBtn.addEventListener('click', async () => {
+                hideSections();
+                getTablesSection.classList.remove('hidden');
+                selectedFunctionality.classList.add('active');
+                try {
+                    const data = await fetchData(`/get-tables/?selected_section=${selectedSection}`);
+                    tablesListDiv.innerHTML = '';
+
+                    data.tables.forEach(tableName => {
+                        const tableItem = document.createElement('div');
+                        tableItem.className = 'table-item';
+                        tableItem.textContent = tableName;
+                        tablesListDiv.appendChild(tableItem);
+                    });
+                } catch (error) {
+                    tablesListDiv.innerHTML = '<div class="table-item">Error fetching tables</div>';
+                }
+            });
+
+            // Initial setup
+            hideSections();
+        });
+    </script>
+</body>
+</html>
