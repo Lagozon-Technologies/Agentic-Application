@@ -29,7 +29,6 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import Settings
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 import json
-nest_asyncio.apply()
 # Setup environment variables
 LLAMA_API_KEY = os.getenv("LLAMA_API_KEY")
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -228,21 +227,7 @@ async def login(
 
 
 
-@app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
 
-    # Extract table names dynamically
-    tables = []
-
-    # Pass dynamically populated dropdown options to the template
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "models": models,
-        "databases": databases,  # Dynamically populated database dropdown
-        "section": subject_areas2,
-        "tables": tables,        # Table dropdown based on database selection
-        "question_dropdown": question_dropdown.split(','),  # Static questions from env
-    })
 
 
 
