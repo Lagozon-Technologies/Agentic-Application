@@ -2,7 +2,7 @@ import pandas as pd
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.memory import ChatMessageHistory
 from langchain_openai import ChatOpenAI
-from new_base import *
+from base import *
 from dotenv import load_dotenv
 from state import session_state
 load_dotenv()  # Load environment variables from .env file
