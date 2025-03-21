@@ -53,7 +53,7 @@ adv_db_schema_sales = os.getenv("adv_db_schema_sales")
 # Change if your schema is different
 DOCSTORE = os.getenv("DOCSTORE").split(",")
 COLLECTION = os.getenv("COLLECTION").split(",")
-DATABASE = os.getenv("DATABASE").split(",")
+Chroma_DATABASE = os.getenv("Chroma_DATABASE").split(",")
 LLM_MODEL = os.getenv("LLM_MODEL")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL")
 
@@ -65,14 +65,7 @@ from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
 openai_ef = OpenAIEmbeddingFunction(api_key=os.getenv("OPENAI_API_KEY"), model_name=EMBEDDING_MODEL)
 
-# class GraphState(TypedDict):
-#     question: str
-#     messages: list
-#     selected_model: str
-#     selected_subject: str
-#     chosen_tables: list
-#     SQL_Statement: str  # Add explicit SQL_Statement field
-#     tables_data: dict
+
 class GraphState(TypedDict):
     question: str
     messages: list
@@ -83,30 +76,6 @@ class GraphState(TypedDict):
     tables_data: dict
     selected_tools: list[str]  # Now a list of tools
 
-# # Intent Classification
-# def classify_intent(state: GraphState) -> str:
-#     llm = ChatOpenAI(model='gpt-4o-mini', temperature=0)
-
-#     """
-#     Classifies the intent of the user's question.
-#     """
-#     user_question = state["messages"][-1].content  # Get the last user message
-
-#     intent_prompt = f"""You are an intent classifier. Your job is to determine which agent is most appropriate to answer the user's question.
-#     The possible agents are:
-#     - researcher: Use this agent when the question requires searching the internet for information about current events or general knowledge.
-#     - db_query: Use this agent when the question requires querying a database to retrieve specific data.
-#     - intellidoc: Use this agent when the question requires retrieving information from existing documents.
-
-#     Question: {user_question}
-#     Return the name of the agent only.
-#     """
-
-#     intent_chain = RunnablePassthrough() | llm | StrOutputParser()
-#     intent = intent_chain.invoke([HumanMessage(content=intent_prompt)]).strip().lower()
-
-#     print(f"Intent Classification: {intent}")
-#     return intent
 
 
 def classify_intent(state: GraphState) -> str:
@@ -245,7 +214,7 @@ def intellidoc_tool(department: str, query_text: str):
 
         docstore_file = DOCSTORE[department_index]
         collection_name = COLLECTION[department_index]
-        db_path = DATABASE[department_index]
+        db_path = Chroma_DATABASE[department_index]
 
         if not os.path.exists(docstore_file):
             return query_text, f"Document store not found for {department}.", ""
@@ -344,16 +313,7 @@ def generate_sql(data: GraphState)-> dict:
     print("This is selectedddd subject:",selected_subject)
 
     if selected_subject.startswith('Adv'):
-    #     if selected_subject.endswith('Person'):
-    # # if configure.selected_subject.startswith('Adv'):
-    #         # db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}'
-    #         #                     ,schema=adv_db_schema_pe
-    #         #                     ,include_tables= data['chosen_tables']
-    #         #                     , view_support=True
-    #         #                     ,sample_rows_in_table_info=1
-    #         #                     ,lazy_table_reflection=True
-    #         #                     )
-    #         # print("DB Connection Done for Adventureworks----",db._schema)
+
         if selected_subject.endswith('HumanResources'):
             db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}'
                     ,schema=adv_db_schema_hr
@@ -434,36 +394,7 @@ def execute_sql(data: GraphState)->dict:
 
     return {'SQL_Statement': SQL_Statement, 'chosen_tables': data['chosen_tables'], 'tables_data': tables_data}
 
-# # Construct the Graph
-# graph = StateGraph(GraphState)
 
-# # Add nodes
-# graph.add_node("classify_intent", lambda state: {"intent": classify_intent(state)})
-# graph.add_node("extract_tables", extract_tables)
-# graph.add_node("generate_sql", generate_sql)
-# graph.add_node("execute_sql", execute_sql)
-# graph.add_node("researcher", researcher_node)
-# graph.add_node("intellidoc", intellidoc_node)
-
-# # Add edges
-# graph.add_edge(START, "classify_intent")
-
-# # Conditional edges based on intent
-# graph.add_conditional_edges(
-#     "classify_intent",
-#     lambda state: state["intent"],
-#     {
-#         "db_query": "extract_tables",  # If intent is db_query, proceed to extract_tables
-#         "researcher": "researcher",  # Handle researcher intent (you can add logic later)
-#         "intellidoc": "intellidoc",  # Handle intellidoc intent (you can add logic later)
-#     }
-# )
-
-# graph.add_edge("extract_tables", "generate_sql")
-# graph.add_edge("generate_sql", "execute_sql")
-# graph.add_edge("execute_sql", END)  # Exit point
-# graph.add_edge("researcher", END)
-# graph.add_edge("intellidoc", END)
 graph = StateGraph(GraphState)
 print("Graph Created")
 # Add nodes
