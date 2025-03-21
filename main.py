@@ -30,8 +30,6 @@ from llama_index.core import Settings
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 import json
 
-import nest_asyncio
-nest_asyncio.apply()
 # Setup environment variables
 LLAMA_API_KEY = os.getenv("LLAMA_API_KEY")
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -613,7 +611,7 @@ async def upload_files(
               
                 try:
                     # Parse the uploaded file using LlamaParse
-                    parsed_text =  use_llamaparse(file_content, file_name)
+                    parsed_text =   await use_llamaparse(file_content, file_name)
 
                     # Split the parsed document into chunks
                     base_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=100)
@@ -724,14 +722,14 @@ async def upload_files(
 
 
 
-def use_llamaparse(file_content, file_name):
+async def use_llamaparse(file_content, file_name):
     try:
         with open(file_name, "wb") as f:
             f.write(file_content)
 
         # Ensure the result_type is 'text', 'markdown', or 'json'
         parser = LlamaParse(result_type='text', verbose=True, language="en", num_workers=2)
-        documents =  parser.load_data([file_name])
+        documents =  await parser.aload_data([file_name])
 
         os.remove(file_name)
 
