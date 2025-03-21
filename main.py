@@ -20,7 +20,7 @@ import nest_asyncio
 import chromadb
 from llama_index.core import VectorStoreIndex
 from llama_index.core import StorageContext
-
+from azure.storage.blob import BlobServiceClient
 from llama_parse import LlamaParse
 from llama_index.core import Document
 from llama_index.llms.openai import OpenAI
@@ -29,46 +29,26 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import Settings
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 import json
+
+import nest_asyncio
+nest_asyncio.apply()
 # Setup environment variables
 LLAMA_API_KEY = os.getenv("LLAMA_API_KEY")
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-TITLE = os.getenv("TITLE")
-# ROLE = os.getenv("ROLE").split(',')
-# PAGE = os.getenv("PAGE").split(",")
-ASK_QUESTION = os.getenv("ASK_QUESTION")
-ASK = os.getenv("ASK")
-UPLOAD_DOC = os.getenv("UPLOAD_DOC")
-E_QUESTION = os.getenv("E_QUESTION")
-SECTION = os.getenv("SECTION").split(",")
 DOCSTORE = os.getenv("DOCSTORE").split(",")
 COLLECTION = os.getenv("COLLECTION").split(",")
-DATABASE = os.getenv("DATABASE").split(",")
-P_QUESTION = os.getenv("P_QUESTION")
-INSERT_DOCUMENT = os.getenv("INSERT_DOCUMENT")
-ADD_DOC = os.getenv("ADD_DOC")
-DOC_ADDED = os.getenv("DOC_ADDED")
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-DELETE_DOC = os.getenv("DELETE_DOC")
-C_DELETE = os.getenv("C_DELETE")
-api_key = os.getenv("UNSTRUCTURED_API_KEY")
-api_url = os.getenv("UNSTRUCTURED_API_URL")
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-DOC_DELETED = os.getenv("DOC_DELETED")
-N_DOC = os.getenv("N_DOC")
-image = os.getenv("image")
-imagess = os.getenv("imagess")
+Chroma_DATABASE = os.getenv("Chroma_DATABASE").split(",")
 LLM_MODEL = os.getenv("LLM_MODEL")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL")
-QA_PROMPT_STR = os.getenv("QA_PROMPT_STR")
-LLM_INSTRUCTION = os.getenv("LLM_INSTRUCTION")
-NO_METADATA = os.getenv("NO_METADATA")
-METADATA_INSTRUCTION = os.getenv("METADATA_INSTRUCTION").split(",")
 os.environ["LLAMA_CLOUD_API_KEY"] = LLAMA_API_KEY
 Settings.llm = OpenAI(model=LLM_MODEL)
 Settings.embed_model = OpenAIEmbedding(api_key=OPENAI_API_KEY)
-
+models = os.getenv('models')
+databases = os.getenv('databases').split(',')
+subject_areas2 = os.getenv('subject_areas2').split(',')
 openai_ef = OpenAIEmbeddingFunction(api_key=os.getenv("OPENAI_API_KEY"), model_name=EMBEDDING_MODEL)
-CSV_FILE_PATH = "record_results.csv"
+AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")
+AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 
 app = FastAPI()
 
@@ -77,13 +57,9 @@ app.mount("/stats", StaticFiles(directory="stats"), name="stats")
 templates = Jinja2Templates(directory="templates")
 
 # Initialize OpenAI API key and model
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-models = os.getenv('models').split(',')
-databases = os.getenv('databases').split(',')
-subject_areas1 = os.getenv('subject_areas1').split(',')
-subject_areas2 = os.getenv('subject_areas2').split(',')
+
 question_dropdown = os.getenv('Question_dropdown')
-llm = ChatOpenAI(model='gpt-4o-mini', temperature=0)  # Adjust model as necessary
+llm = ChatOpenAI(model=models, temperature=0)  # Adjust model as necessary
 from table_details import get_table_details  # Importing the function
 
 class Table(BaseModel):
@@ -101,12 +77,9 @@ app.mount("/stats", StaticFiles(directory="stats"), name="stats")
 templates = Jinja2Templates(directory="templates")
 
 # Initialize OpenAI API key and model
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-models = os.getenv('models').split(',')
-databases = os.getenv('databases').split(',')
-subject_areas1 = os.getenv('subject_areas1').split(',')
-subject_areas2 = os.getenv('subject_areas2').split(',')
-question_dropdown = os.getenv('Question_dropdown')
+
+
+
 llm = ChatOpenAI(model='gpt-4o-mini', temperature=0)  # Adjust model as necessary
 from table_details import get_table_details  # Importing the function
 
@@ -131,10 +104,6 @@ async def read_root(request: Request):
         "question_dropdown": question_dropdown.split(','),  # Static questions from env
     })
 
-# db_host1=os.getenv("db_host1")
-# db_database1=os.getenv("db_database1")
-# db_user1=os.getenv("db_user1")
-# db_password1=os.getenv("db_password1")
 
 from fastapi import FastAPI, HTTPException, Depends, status, Form
 import psycopg2
@@ -228,9 +197,6 @@ async def login(
 
 
 
-
-
-
 @app.get("/authentication", response_class=HTMLResponse)
 async def user_page(request: Request):
     return templates.TemplateResponse("authentication.html", {"request": request})
@@ -283,24 +249,6 @@ async def get_tables(selected_section: str):
     tables = [line.split("Table Name:")[1].strip() for line in table_details.split("\n") if "Table Name:" in line]
     # Return tables as JSON
     return {"tables": tables}
-
-# Table data display endpoint
-# def display_table_with_styles(data, table_name, page_number, records_per_page):
-#     start_index = (page_number - 1) * records_per_page
-#     end_index = start_index + records_per_page
-#     page_data = data.iloc[start_index:end_index]
-#     styled_table = page_data.style.set_table_attributes('style="border: 2px solid black; border-collapse: collapse;"') \
-#         .set_table_styles(
-#             [{
-#                 'selector': 'th',
-#                 'props': [('background-color', '#333'), ('color', 'white'), ('font-weight', 'bold'), ('font-size', '16px')]
-#             },
-#             {
-#                 'selector': 'td',
-#                 'props': [('border', '2px solid black'), ('padding', '5px')]
-#             }]
-#         ).to_html(escape=False)
-#     return styled_table
 
 def display_table_with_styles(data, table_name):
 
@@ -450,42 +398,13 @@ async def submit_query(
             }
 
 
-
-        # elif result["intent"] == "intellidoc":
-        #     # # Call intellidoc_tool to get the results
-        #     print("result is: ",result)
-
-        #     # Construct the response data dictionary
-        #     response_data = {
-        #         "user_query": session_state['user_query'],
-        #         "search_results": result.get("search_results", "No results found."),
-
-        #     }
-
         elif result["intent"] == "intellidoc":
             print("result is: ", result)
 
             # Extract relevant parts
             search_results = result.get("search_results", "No results found.")
             print("Search Results:", search_results)
-            # # Splitting the response into different sections
-
-            # Identify sections: Answer, Source, FAQ
-            # answer = parts[0] if len(parts) > 0 else ""
-            # print("Answer:", answer)
-            # parts = search_results.split("\n\n")
-
-            # source = next((part for part in parts if part.startswith("Source:")), "")
-
-
-            # # Construct the formatted HTML response
-            # formatted_response = f"""
-            #     <p>{search_results}</p>
-            #     <p><strong>{source}</strong></p>
-
-            # """
-
-            # Construct the response data dictionary
+           
             response_data = {
                 "user_query": session_state['user_query'],
                 "search_results": search_results
@@ -612,11 +531,11 @@ async def admin_page(request: Request):
             selected_section = form_data.get("section")
 
             # Ensure selected_section is valid
-            if selected_section not in SECTION:
+            if selected_section not in subject_areas2:
                 raise ValueError("Invalid section selected.")
 
-            collection_name = COLLECTION[SECTION.index(selected_section)]
-            db_path = DATABASE[SECTION.index(selected_section)]
+            collection_name = COLLECTION[subject_areas2.index(selected_section)]
+            db_path = Chroma_DATABASE[subject_areas2.index(selected_section)]
 
             logging.info(f"Selected section: {selected_section}, Collection: {collection_name}, DB Path: {db_path}")
 
@@ -635,7 +554,7 @@ async def admin_page(request: Request):
             'admin.html',
             {
                 "request": request,
-                "sections": SECTION
+                "sections":subject_areas2
             }
         )
     except Exception as e:
@@ -658,23 +577,43 @@ async def upload_files(
 
         selected_section = section
         # Ensure selected_section is valid
-        if selected_section not in SECTION:
+        if selected_section not in subject_areas2:
             raise ValueError("Invalid section selected.")
 
-        collection_name = COLLECTION[SECTION.index(selected_section)]
-        db_path = DATABASE[SECTION.index(selected_section)]
+        collection_name = COLLECTION[subject_areas2.index(selected_section)]
+        db_path = Chroma_DATABASE[subject_areas2.index(selected_section)]
 
         logging.info(f"Selected section: {selected_section}, Collection: {collection_name}, DB Path: {db_path}")
 
         if files:
+            def upload_to_blob_storage(
+                    connect_str: str, container_name: str,collection_name, file_content, file_name
+                ):
+                    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+
+                    # Ensure the container exists and create if necessary
+                    container_client = blob_service_client.get_container_client(container_name)
+                    blob_name = f"{collection_name}/{file_name}"
+                    blob_client = container_client.get_blob_client(blob_name)
+
+                    print(f"Uploading {file_name} to {blob_name}...")
+                    blob_client.upload_blob(file_content, overwrite=True)
             # logging.info(f"Handling upload for collection: {collection}, DB Path: {db_path}")
             for file in files:
                 file_content = await file.read()
                 file_name = file.filename
-
+                
+                upload_to_blob_storage(
+                    AZURE_STORAGE_CONNECTION_STRING,
+                    AZURE_CONTAINER_NAME,
+                    collection_name,
+                    file_content,
+                    file_name,
+                )
+              
                 try:
                     # Parse the uploaded file using LlamaParse
-                    parsed_text = use_llamaparse(file_content, file_name)
+                    parsed_text =  use_llamaparse(file_content, file_name)
 
                     # Split the parsed document into chunks
                     base_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=100)
@@ -747,16 +686,7 @@ async def upload_files(
                         # Persist the storage context if the file does not exist
                         storage_context.docstore.persist(coll)
 
-                    # selected_section = section
-                    # # Ensure selected_section is valid
-                    # if selected_section not in SECTION:
-                    #     raise ValueError("Invalid section selected.")
-
-                    # collection_name = COLLECTION[SECTION.index(selected_section)]
-                    # db_path = DATABASE[SECTION.index(selected_section)]
-
-                    # logging.info(f"Selected section: {selected_section}, Collection: {collection_name}, DB Path: {db_path}")
-                    # Initialize vector store index and add document chunks to collection
+                   
                     collection_instance = init_chroma_collection(db_path, collection_name)
 
                     embed_model = OpenAIEmbedding()
@@ -801,7 +731,7 @@ def use_llamaparse(file_content, file_name):
 
         # Ensure the result_type is 'text', 'markdown', or 'json'
         parser = LlamaParse(result_type='text', verbose=True, language="en", num_workers=2)
-        documents = parser.load_data([file_name])
+        documents =  parser.load_data([file_name])
 
         os.remove(file_name)
 
@@ -832,11 +762,11 @@ async def show_documents(request: Request,
 
         selected_section = section
         # Ensure selected_section is valid
-        if selected_section not in SECTION:
+        if selected_section not in subject_areas2:
             raise ValueError("Invalid section selected.")
 
-        collection_name = COLLECTION[SECTION.index(selected_section)]
-        db_path = DATABASE[SECTION.index(selected_section)]
+        collection_name = COLLECTION[subject_areas2.index(selected_section)]
+        db_path = Chroma_DATABASE[subject_areas2.index(selected_section)]
 
         logging.info(f"Selected section: {selected_section}, Collection: {collection_name}, DB Path: {db_path}")
 
@@ -864,21 +794,7 @@ async def show_documents(request: Request,
         logging.info(f"Documents retrieved successfully for collection: {collection_name}")
         return doc_list
 
-        # Logging the successful retrieval
-
-
-        # Render the template with the document list
-        # return templates.TemplateResponse(
-        #     'admin.html',
-        #     {
-        #         "request": request,
-        #         "section": collection_name,
-        #         "documents": doc_list,
-        #         "collection": collection_name,
-        #         "db_path": db_path,
-        #         "sections": SECTION,
-        #     }
-        # )
+       
 
     except Exception as e:
         logging.error(f"Error showing documents: {e}")
@@ -892,16 +808,40 @@ async def delete_document(request: Request,
     try:
         selected_section = section
     # Ensure selected_section is valid
-        if selected_section not in SECTION:
+        if selected_section not in subject_areas2:
             raise ValueError("Invalid section selected.")
 
-        collection_name = COLLECTION[SECTION.index(selected_section)]
-        db_path = DATABASE[SECTION.index(selected_section)]
+        collection_name = COLLECTION[subject_areas2.index(selected_section)]
+        db_path = Chroma_DATABASE[subject_areas2.index(selected_section)]
 
         logging.info(f"Selected section: {selected_section}, Collection: {collection_name}, DB Path: {db_path}")
         # Initialize the collection
         collection = init_chroma_collection(db_path, collection_name)
         print("document to be deleted",doc_name)
+        
+        if doc_name:
+              def delete_from_blob_storage(connect_str: str, container_name: str, file_name: str,collection_name):
+                    # Create a BlobServiceClient to interact with the Azure Blob Storage
+                    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+
+                    # Get the container client
+                    container_client = blob_service_client.get_container_client(container_name)
+
+                    # Create the blob name with the collection prefix
+                    blob_name = f"{collection_name}/{file_name}"
+
+                    # Get the blob client for the specific file (blob)
+                    blob_client = container_client.get_blob_client(blob_name)
+
+                    # Delete the specified blob (file)
+                    try:
+                        print(f"Deleting {blob_name} from blob storage...")
+                        blob_client.delete_blob()
+                        print(
+                            f"Blob '{blob_name}' deleted successfully from container '{container_name}'."
+                        )
+                    except Exception as e:
+                        print(f"Failed to delete blob: {e}")
         # Retrieve metadata and IDs from the collection
         docs = collection.get()['metadatas']
         ids = collection.get()['ids']
@@ -921,8 +861,17 @@ async def delete_document(request: Request,
         print("Document name: ", doc_name)
         print("IDs to delete: ", ids_to_delete)
 
+        delete_from_blob_storage(
+                        AZURE_STORAGE_CONNECTION_STRING,
+                        AZURE_CONTAINER_NAME,
+                        doc_name,
+                        collection_name )
+        
+      
+        
         if ids_to_delete:
-            # Attempt deletion
+            
+            # Attempt deletio
             collection.delete(ids=ids_to_delete)
 
              # Step 1: Read the JSON file
