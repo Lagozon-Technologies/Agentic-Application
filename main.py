@@ -138,8 +138,7 @@ get_db_connection()
 async def login(
     email: str = Form(...),
     password: str = Form(...),
-    section: str = Form(...),
-    full_name: str = Form(...)
+    section: str = Form(...)
     
 ):
     if not email or not password or not section:
