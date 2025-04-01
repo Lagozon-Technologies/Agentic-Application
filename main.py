@@ -17,6 +17,9 @@ from fastapi.responses import JSONResponse
 from typing import List
 import os, time
 import nest_asyncio
+from io import BytesIO
+import openai
+
 import chromadb
 from llama_index.core import VectorStoreIndex
 from llama_index.core import StorageContext
@@ -79,6 +82,8 @@ templates = Jinja2Templates(directory="templates")
 
 
 llm = ChatOpenAI(model='gpt-4o-mini', temperature=0)  # Adjust model as necessary
+openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
 from table_details import get_table_details  # Importing the function
 
 class Table(BaseModel):
@@ -214,6 +219,37 @@ async def user_more(request: Request):
         "question_dropdown": question_dropdown.split(','),  # Static questions from env
     })
 
+@app.post("/transcribe-audio/")
+async def transcribe_audio(file: UploadFile = File(...)):
+    """
+    Transcribes an audio file using OpenAI's Whisper API.
+
+    Args:
+        file (UploadFile): The audio file to transcribe.
+
+    Returns:
+        JSONResponse: A JSON response containing the transcription or an error message.
+    """
+    try:
+        
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="Missing OpenAI API Key.")
+        audio_bytes = await file.read()
+        audio_bio = BytesIO(audio_bytes)
+        audio_bio.name = "audio.webm"
+
+        # Fix: Using OpenAI API correctly
+        transcript = openai_client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_bio
+        )
+
+        # Fix: Access `transcript.text` instead of treating it as a dictionary
+        return {"transcription": transcript.text}
+
+    except Exception as e:
+        return JSONResponse(content={"error": f"Error transcribing audio: {str(e)}"}, status_code=500)
 
 
 @app.get("/get_questions/")
@@ -562,29 +598,7 @@ async def admin_page(request: Request):
             status_code=500
         )
 
-        
-        
-@app.post("/upload")
-async def upload_files(
-    request: Request,
-    files: List[UploadFile] = File(...),
-    section : str = Form(...)
-):
-    """Handle file uploads for documents."""
-    try:
-
-        selected_section = section
-        # Ensure selected_section is valid
-        if selected_section not in subject_areas2:
-            raise ValueError("Invalid section selected.")
-
-        collection_name = COLLECTION[subject_areas2.index(selected_section)]
-        db_path = Chroma_DATABASE[subject_areas2.index(selected_section)]
-
-        logging.info(f"Selected section: {selected_section}, Collection: {collection_name}, DB Path: {db_path}")
-
-        if files:
-            def upload_to_blob_storage(
+def upload_to_blob_storage(
                     connect_str: str, container_name: str,collection_name, file_content, file_name
                 ):
                     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
@@ -595,12 +609,186 @@ async def upload_files(
                     blob_client = container_client.get_blob_client(blob_name)
 
                     print(f"Uploading {file_name} to {blob_name}...")
-                    blob_client.upload_blob(file_content, overwrite=True)
-            # logging.info(f"Handling upload for collection: {collection}, DB Path: {db_path}")
-            for file in files:
+                    blob_client.upload_blob(file_content, overwrite=True)        
+        
+# @app.post("/upload")
+# async def upload_files(
+#     request: Request,
+#     files: List[UploadFile] = File(...),
+#     section : str = Form(...)
+# ):
+#     """Handle file uploads for documents."""
+#     try:
+
+#         selected_section = section
+#         # Ensure selected_section is valid
+#         if selected_section not in subject_areas2:
+#             raise ValueError("Invalid section selected.")
+
+#         collection_name = COLLECTION[subject_areas2.index(selected_section)]
+#         db_path = Chroma_DATABASE[subject_areas2.index(selected_section)]
+
+#         logging.info(f"Selected section: {selected_section}, Collection: {collection_name}, DB Path: {db_path}")
+
+#         if files:
+#             # logging.info(f"Handling upload for collection: {collection}, DB Path: {db_path}")
+#             for file in files:
+#                 file_content = await file.read()
+#                 file_name = file.filename
+                
+#                 upload_to_blob_storage(
+#                     AZURE_STORAGE_CONNECTION_STRING,
+#                     AZURE_CONTAINER_NAME,
+#                     collection_name,
+#                     file_content,
+#                     file_name,
+#                 )
+              
+#                 try:
+#                     # Parse the uploaded file using LlamaParse
+#                     parsed_text =   await use_llamaparse(file_content, file_name)
+
+#                     # Split the parsed document into chunks
+#                     base_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=100)
+#                     nodes = base_splitter.get_nodes_from_documents([Document(text=parsed_text)])
+
+#                     # Initialize storage context (defaults to in-memory)
+#                     storage_context = StorageContext.from_defaults()
+
+#                     # Prepare for storing document chunks
+#                     base_file_name = os.path.basename(file_name)
+#                     chunk_ids = []
+#                     metadatas = []
+
+#                     for i, node in enumerate(nodes):
+#                         chunk_id = f"{base_file_name}_{i + 1}"
+#                         chunk_ids.append(chunk_id)
+
+#                         metadata = {"type": base_file_name, "source": file_name}
+#                         metadatas.append(metadata)
+
+#                         document = Document(text=node.text, metadata=metadata, id_=chunk_id)
+#                         storage_context.docstore.add_documents([document])
+
+#                     # Load existing documents from the .json file if it exists
+#                     for i in range(len(DOCSTORE)):
+#                         if collection_name in DOCSTORE[i]:
+#                             coll = DOCSTORE[i]
+#                             break
+#                     existing_documents = {}
+#                     if os.path.exists(coll):
+#                         with open(coll, "r") as f:
+#                             existing_documents = json.load(f)
+
+#                         # Persist the storage context (if necessary)
+#                         storage_context.docstore.persist(coll)
+
+#                         # Load new data from the same file (or another source)
+#                         with open(coll, "r") as f:
+#                             st_data = json.load(f)
+
+#                         # Update existing_documents with st_data
+#                         for key, value in st_data.items():
+#                             if key in existing_documents:
+#                                 # Ensure the existing value is a list before extending
+#                                 if isinstance(existing_documents[key], list):
+#                                     existing_documents[key].extend(
+#                                         value
+#                                     )  # Merge lists if key exists
+#                                 else:
+#                                     # If it's not a list, you can choose to replace it or handle it differently
+#                                     existing_documents[key] = (
+#                                         [existing_documents[key]] + value
+#                                         if isinstance(value, list)
+#                                         else [existing_documents[key], value]
+#                                     )
+#                             else:
+#                                 existing_documents[key] = value  # Add new key-value pair
+
+#                         merged_dict = {}
+#                         for d in existing_documents["docstore/data"]:
+#                             merged_dict.update(d)
+#                         final_dict = {}
+#                         final_dict["docstore/data"] = merged_dict
+
+#                         # Write the updated documents back to the JSON file
+#                         with open(coll, "w") as f:
+#                             json.dump(final_dict, f, indent=4)
+
+#                     else:
+#                         # Persist the storage context if the file does not exist
+#                         storage_context.docstore.persist(coll)
+
+                   
+#                     collection_instance = init_chroma_collection(db_path, collection_name)
+
+#                     embed_model = OpenAIEmbedding()
+#                     VectorStoreIndex(nodes, storage_context=storage_context, embed_model=embed_model)
+#                     batch_size = 500
+#                     for i in range(0, len(nodes), batch_size):
+#                         batch_nodes = nodes[i : i + batch_size]
+#                         try:
+#                             collection_instance.add(
+#                                 documents=[node.text for node in batch_nodes],
+#                                 metadatas=metadatas[i : i + batch_size],
+#                                 ids=chunk_ids[i : i + batch_size],
+#                             )
+#                             time.sleep(5)  # Add a retry with a delay
+#                             logging.info(f"Files uploaded and processed successfully for collection: {collection_name}")
+#                             return JSONResponse({"status": "success", "message": "Documents uploaded successfully."})
+
+
+#                         except:
+#                             # Handle rate limit by adding a delay or retry mechanism
+#                             print("Rate limit error has occurred at this moment")
+#                             return JSONResponse({"status": "error", "message": f"Error processing file {file_name}."})
+
+
+
+#                 except Exception as e:
+#                     logging.error(f"Error processing file {file_name}: {e}")
+#                     return JSONResponse({"status": "error", "message": f"Error processing file {file_name}."})
+
+#         logging.warning("No files uploaded.")
+#         return JSONResponse({"status": "error", "message": "No files uploaded."})
+#     except Exception as e:
+#         logging.error(f"Error in upload_files: {e}")
+#         return JSONResponse({"status": "error", "message": "Error during file upload."})
+
+@app.post("/upload")
+async def upload_files(
+    request: Request,
+    files: List[UploadFile] = File(...),
+    section: str = Form(...)
+):
+    """Handle file uploads for documents."""
+    try:
+        selected_section = section
+        if selected_section not in subject_areas2:
+            raise ValueError("Invalid section selected.")
+
+        collection_name = COLLECTION[subject_areas2.index(selected_section)]
+        db_path = Chroma_DATABASE[subject_areas2.index(selected_section)]
+
+        logging.info(f"Selected section: {selected_section}, Collection: {collection_name}, DB Path: {db_path}")
+
+        if not files:
+            logging.warning("No files uploaded.")
+            return JSONResponse({"status": "error", "message": "No files uploaded."})
+
+        # Initialize collection outside the file loop
+        collection_instance = init_chroma_collection(db_path, collection_name)
+        embed_model = OpenAIEmbedding()
+        
+        processed_files = []
+        failed_files = []
+
+        for file in files:
+            try:
                 file_content = await file.read()
                 file_name = file.filename
                 
+                # Upload to blob storage
                 upload_to_blob_storage(
                     AZURE_STORAGE_CONNECTION_STRING,
                     AZURE_CONTAINER_NAME,
@@ -608,119 +796,62 @@ async def upload_files(
                     file_content,
                     file_name,
                 )
-              
-                try:
-                    # Parse the uploaded file using LlamaParse
-                    parsed_text =   await use_llamaparse(file_content, file_name)
 
-                    # Split the parsed document into chunks
-                    base_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=100)
-                    nodes = base_splitter.get_nodes_from_documents([Document(text=parsed_text)])
+                # Parse the uploaded file using LlamaParse
+                parsed_text = await use_llamaparse(file_content, file_name)
 
-                    # Initialize storage context (defaults to in-memory)
-                    storage_context = StorageContext.from_defaults()
+                # Split the parsed document into chunks
+                base_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=100)
+                nodes = base_splitter.get_nodes_from_documents([Document(text=parsed_text)])
 
-                    # Prepare for storing document chunks
-                    base_file_name = os.path.basename(file_name)
-                    chunk_ids = []
-                    metadatas = []
+                # Prepare metadata and IDs
+                base_file_name = os.path.basename(file_name)
+                chunk_ids = [f"{base_file_name}_{i + 1}" for i in range(len(nodes))]
+                metadatas = [{"type": base_file_name, "source": file_name} for _ in nodes]
 
-                    for i, node in enumerate(nodes):
-                        chunk_id = f"{base_file_name}_{i + 1}"
-                        chunk_ids.append(chunk_id)
+                # Process in batches
+                batch_size = 500
+                for i in range(0, len(nodes), batch_size):
+                    batch_nodes = nodes[i:i + batch_size]
+                    batch_metadatas = metadatas[i:i + batch_size]
+                    batch_ids = chunk_ids[i:i + batch_size]
 
-                        metadata = {"type": base_file_name, "source": file_name}
-                        metadatas.append(metadata)
+                    try:
+                        collection_instance.add(
+                            documents=[node.text for node in batch_nodes],
+                            metadatas=batch_metadatas,
+                            ids=batch_ids,
+                        )
+                        time.sleep(2)  # Rate limit protection
+                    except Exception as e:
+                        logging.error(f"Error adding batch {i} of file {file_name}: {e}")
+                        raise
 
-                        document = Document(text=node.text, metadata=metadata, id_=chunk_id)
-                        storage_context.docstore.add_documents([document])
+                processed_files.append(file_name)
+                logging.info(f"Successfully processed file: {file_name}")
 
-                    # Load existing documents from the .json file if it exists
-                    for i in range(len(DOCSTORE)):
-                        if collection_name in DOCSTORE[i]:
-                            coll = DOCSTORE[i]
-                            break
-                    existing_documents = {}
-                    if os.path.exists(coll):
-                        with open(coll, "r") as f:
-                            existing_documents = json.load(f)
+            except Exception as e:
+                logging.error(f"Error processing file {file_name}: {e}")
+                failed_files.append(file_name)
 
-                        # Persist the storage context (if necessary)
-                        storage_context.docstore.persist(coll)
+        # Final response
+        if failed_files:
+            return JSONResponse({
+                "status": "partial_success",
+                "message": f"Processed {len(processed_files)} files successfully, {len(failed_files)} failed",
+                "processed_files": processed_files,
+                "failed_files": failed_files
+            })
+        
+        return JSONResponse({
+            "status": "success",
+            "message": f"All {len(processed_files)} files processed successfully",
+            "processed_files": processed_files
+        })
 
-                        # Load new data from the same file (or another source)
-                        with open(coll, "r") as f:
-                            st_data = json.load(f)
-
-                        # Update existing_documents with st_data
-                        for key, value in st_data.items():
-                            if key in existing_documents:
-                                # Ensure the existing value is a list before extending
-                                if isinstance(existing_documents[key], list):
-                                    existing_documents[key].extend(
-                                        value
-                                    )  # Merge lists if key exists
-                                else:
-                                    # If it's not a list, you can choose to replace it or handle it differently
-                                    existing_documents[key] = (
-                                        [existing_documents[key]] + value
-                                        if isinstance(value, list)
-                                        else [existing_documents[key], value]
-                                    )
-                            else:
-                                existing_documents[key] = value  # Add new key-value pair
-
-                        merged_dict = {}
-                        for d in existing_documents["docstore/data"]:
-                            merged_dict.update(d)
-                        final_dict = {}
-                        final_dict["docstore/data"] = merged_dict
-
-                        # Write the updated documents back to the JSON file
-                        with open(coll, "w") as f:
-                            json.dump(final_dict, f, indent=4)
-
-                    else:
-                        # Persist the storage context if the file does not exist
-                        storage_context.docstore.persist(coll)
-
-                   
-                    collection_instance = init_chroma_collection(db_path, collection_name)
-
-                    embed_model = OpenAIEmbedding()
-                    VectorStoreIndex(nodes, storage_context=storage_context, embed_model=embed_model)
-                    batch_size = 500
-                    for i in range(0, len(nodes), batch_size):
-                        batch_nodes = nodes[i : i + batch_size]
-                        try:
-                            collection_instance.add(
-                                documents=[node.text for node in batch_nodes],
-                                metadatas=metadatas[i : i + batch_size],
-                                ids=chunk_ids[i : i + batch_size],
-                            )
-                            time.sleep(5)  # Add a retry with a delay
-                            logging.info(f"Files uploaded and processed successfully for collection: {collection_name}")
-                            return JSONResponse({"status": "success", "message": "Documents uploaded successfully."})
-
-
-                        except:
-                            # Handle rate limit by adding a delay or retry mechanism
-                            print("Rate limit error has occurred at this moment")
-                            return JSONResponse({"status": "error", "message": f"Error processing file {file_name}."})
-
-
-
-                except Exception as e:
-                    logging.error(f"Error processing file {file_name}: {e}")
-                    return JSONResponse({"status": "error", "message": f"Error processing file {file_name}."})
-
-        logging.warning("No files uploaded.")
-        return JSONResponse({"status": "error", "message": "No files uploaded."})
     except Exception as e:
         logging.error(f"Error in upload_files: {e}")
-        return JSONResponse({"status": "error", "message": "Error during file upload."})
-
-
+        return JSONResponse({"status": "error", "message": f"Error during file upload: {str(e)}"})
 
 async def use_llamaparse(file_content, file_name):
     try:
