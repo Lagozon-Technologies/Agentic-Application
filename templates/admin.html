@@ -273,7 +273,7 @@
         <section id="document-actions">
             <div class="button-group-grid">
                 <button id="show-docs-btn">Show Documents</button>
-                <button id="get-tables-btn">Get Tables</button>
+                <button id="get-tables-btn">Show Tables</button>
                 <button id="upload-btn">Insert Document</button>
                 <button id="delete-doc-btn">Delete Document</button>
             </div>
@@ -352,7 +352,7 @@
             const getTablesBtn = document.getElementById('get-tables-btn');
             const actualUploadBtn = document.getElementById('actual-upload-btn');
             const actualDeleteBtn = document.getElementById('actual-delete-btn');
-
+            const fileUploadInput = document.getElementById('file-upload');
             const showSection = document.getElementById('show-documents-section');
             const deleteSection = document.getElementById('delete-section');
             const uploadSection = document.getElementById('upload-section');
@@ -429,29 +429,66 @@
             });
 
             // Handle File Upload
+            // actualUploadBtn.addEventListener('click', async () => {
+            //     const files = document.getElementById('file-upload').files;
+
+            //     if (files.length === 0) {
+            //         uploadResultDiv.textContent = 'Please select files to upload.';
+            //         return;
+            //     }
+
+            //     const formData = new FormData();
+            //     formData.append('section', selectedSection);
+            //     for (const file of files) {
+            //         formData.append('files', file);
+            //     }
+
+            //     uploadResultDiv.textContent = 'Uploading...';
+
+            //     try {
+            //         const data = await fetchData('/upload', 'POST', formData);
+            //         uploadResultDiv.textContent = data.message;
+            //     } catch (error) {
+            //         uploadResultDiv.textContent = 'Error uploading files.';
+            //     }
+            // });
+
             actualUploadBtn.addEventListener('click', async () => {
-                const files = document.getElementById('file-upload').files;
+                    const files = fileUploadInput.files;
 
-                if (files.length === 0) {
-                    uploadResultDiv.textContent = 'Please select files to upload.';
-                    return;
-                }
+                    if (files.length === 0) {
+                        uploadResultDiv.textContent = 'Please select files to upload.';
+                        return;
+                    }
 
-                const formData = new FormData();
-                formData.append('section', selectedSection);
-                for (const file of files) {
-                    formData.append('files', file);
-                }
+                    const formData = new FormData();
+                    formData.append('section', selectedSection);
+                    
+                    // Append all files with the same field name 'files'
+                    for (const file of files) {
+                        formData.append('files', file); // This matches the FastAPI parameter name
+                    }
 
-                uploadResultDiv.textContent = 'Uploading...';
+                    uploadResultDiv.textContent = 'Uploading...';
 
-                try {
-                    const data = await fetchData('/upload', 'POST', formData);
-                    uploadResultDiv.textContent = data.message;
-                } catch (error) {
-                    uploadResultDiv.textContent = 'Error uploading files.';
-                }
-            });
+                    try {
+                        const response = await fetch('/upload', {
+                            method: 'POST',
+                            body: formData
+                            // Don't set Content-Type header - the browser will set it automatically with the boundary
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        uploadResultDiv.textContent = data.message || 'Upload successful!';
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        uploadResultDiv.textContent = 'Error uploading files: ' + error.message;
+                    }
+                });
 
             // Show Delete Section
             deleteDocBtn.addEventListener('click', () => {
