@@ -135,53 +135,6 @@ body {
     font-size: 1.2rem;
 }
 
-/* .suggestions .suggestions-item span {
-    height: 45px;
-    width: 45px;
-    margin-top: 35px;
-    display: flex;
-    align-self: flex-end;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    color: #1d7efd;
-    background: var(--primary-color);
-}
-
-.suggestions .suggestions-item:nth-child(2) span {
-    color: #28a745;
-}
-
-.suggestions .suggestions-item:nth-child(3) span {
-    color: #ffc107;
-}
-
-.suggestions .suggestions-item:nth-child(4) span {
-    color: #6f42c1;
-}
-
-.suggestions .suggestions-item:nth-child(5) span {
-    color: #e91e63;
-}
-.suggestions .suggestions-item:nth-child(6) span {
-    color: #28a745;
-}
-
-.suggestions .suggestions-item:nth-child(7) span {
-    color: #ffc107;
-}
-
-.suggestions .suggestions-item:nth-child(8) span {
-    color: #6f42c1;
-}
-
-.suggestions .suggestions-item:nth-child(9) span {
-    color: #e91e63;
-}
-
-.suggestions .suggestions-item:nth-child(10) span {
-    color: red;
-} */
 
 /* Prompt container stylings */
 .prompt-container {
@@ -538,6 +491,26 @@ html, body {
             cursor: pointer;
         }
 
+/* Audio recording button */
+#record-audio-btn {
+    position: relative;
+}
+
+#record-audio-btn.recording::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    background-color: red;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+
+
 
 /* .nav-links li {
     margin-bottom: 500px;
@@ -624,9 +597,9 @@ html, body {
 
                
                 <div id="settings-options">
-                    <label><input type="radio" name="settings-option" id="option-intellidoc" value="intellidoc"> IntelliDoc</label><br>
-                    <label><input type="radio" name="settings-option" id="option-db-query" value="db_query"> DB Query</label><br>
-                    <label><input type="radio" name="settings-option" id="option-researcher" value="researcher"> Researcher</label><br>
+                    <label><input type="radio" name="settings-option" id="option-intellidoc" value="intellidoc"> Document agent</label><br>
+                    <label><input type="radio" name="settings-option" id="option-db-query" value="db_query">Database agent </label><br>
+                    <label><input type="radio" name="settings-option" id="option-researcher" value="researcher"> Web agent</label><br>
                     <label><input type="checkbox" id="option-all" value="all"> All</label>
                 </div>
                 
@@ -659,6 +632,9 @@ html, body {
                         required
                     />
                     <div class="prompt-actions">
+                        <button id="record-audio-btn" type="button" class="material-symbols-rounded" title="Record Audio">
+                            mic
+                        </button>
                         <button id="add-file-btn" type="button" class="material-symbols-rounded" title="Attach file">
                             attach_file
                         </button>
@@ -693,11 +669,16 @@ document.addEventListener("DOMContentLoaded", function () {
     const chatResults = document.getElementById("chat-results");
     const themeTogglerBtn = document.getElementById("theme-toggler-btn");
     const deleteChatsBtn = document.getElementById("new-chat-btn");
+    const recordAudioBtn = document.getElementById("record-audio-btn");
     
     // ✅ Constants
-    const API_BASE_URL = "https://lz-agenticapplication-ggc6g4a5a0ckhkgm.centralindia-01.azurewebsites.net";
-    let isSubmitting = false;
 
+    const API_BASE_URL = "http://127.0.0.1:8000";
+    let isSubmitting = false;
+        // ✅ Add these at the top with your other constants
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
     // ✅ Initialize App
     const urlParams = new URLSearchParams(window.location.search);
     const userName = urlParams.get("name");
@@ -762,6 +743,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Theme Toggler
     themeTogglerBtn.addEventListener("click", toggleTheme);
+    // Audio Recording
+    recordAudioBtn.addEventListener("click", toggleAudioRecording);
+ 
 
     // Form Submission
     promptForm.addEventListener("submit", async (e) => {
@@ -865,6 +849,71 @@ document.addEventListener("DOMContentLoaded", function () {
             promptInput.value = "";
         }
     }
+     // Audio Recording Functions
+     async function toggleAudioRecording() {
+        
+
+        if (!mediaRecorder) {
+            // Start recording
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    await transcribeAudio(audioBlob);
+                    recordAudioBtn.classList.remove("recording");
+                };
+                
+                mediaRecorder.start();
+                recordAudioBtn.classList.add("recording");
+            } catch (error) {
+                console.error("Error accessing microphone:", error);
+                alert("Could not access microphone. Please check permissions.");
+            }
+        } else {
+            // Stop recording
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            mediaRecorder = null;
+        }
+    }
+
+    async function transcribeAudio(audioBlob) {
+        showLoadingIndicator();
+        
+        try {
+            const formData = new FormData();
+            formData.append("file", audioBlob, "recording.webm");
+            
+            const response = await fetch(`${API_BASE_URL}/transcribe-audio/`, {
+                method: "POST",
+                body: formData
+            });
+            
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
+            const data = await response.json();
+            promptInput.value = data.transcription;
+            removeLoadingIndicator();
+        } catch (error) {
+            console.error("Transcription error:", error);
+            displayErrorMessage("Failed to transcribe audio. Please try again.");
+            
+        }finally {
+        removeLoadingIndicator();
+        audioChunks = []; // Clear chunks after processing
+    }
+        
+    }
+
+    
+
 
     function formatLLMResponse(data) {
     const container = document.createElement("div");
@@ -900,118 +949,14 @@ document.addEventListener("DOMContentLoaded", function () {
         container.appendChild(sourceDiv);
     }
 
-    // Format related queries (Display After Source)
-    // if (relatedQueriesText) {
-    //     const queriesDiv = document.createElement("div");
-    //     queriesDiv.classList.add("related-queries");
-    //     queriesDiv.innerHTML = "<h3><strong>Related Queries</strong></h3>";
-    //     const ul = document.createElement("ul");
 
-    //     relatedQueriesText.split("\n").forEach(query => {
-    //         if (query.trim()) {
-    //             const li = document.createElement("li");
-    //             // Make each related query clickable
-    //             const queryText = query.replace(/^\d+\.\s*/, "").trim(); // Remove numbering (e.g., "1. ")
-    //             li.innerHTML = `<a href="#" class="related-query-link">${queryText}</a>`;
-    //             li.addEventListener("click", (e) => {
-    //                 e.preventDefault(); // Prevent default link behavior
-    //                 console.log("Clicked Query:", queryText); // Debugging: Log the clicked query
-    //                 addMessageToChat("user", queryText); // Call the addMessageToChat function with the clicked query
-    //             });
-    //             ul.appendChild(li);
-    //         }
-    //     });
-
-    //     queriesDiv.appendChild(ul);
-    //     container.appendChild(queriesDiv);
-    // }
+ 
 
     return container.innerHTML;
 }
 
  
-//     function formatLLMResponse(data) {
-//     const container = document.createElement("div");
-//     container.classList.add("search-result");
 
-//     // Remove "Search Results" if present
-//     data = data.replace(/^Search Results\s*/, "");
-
-//     // Replace line breaks with spaces to prevent unintended splits
-//     data = data.replace(/\n/g, " ");
-
-//     // Extract sections dynamically
-//     const sourceMatch = data.match(/Source\s*:\s*([\s\S]*?)(Related Quer(y|ies):|$)/s);
-//     const relatedQueryMatch = data.match(/Related Quer(y|ies):\s*([\s\S]*?)(Source:|$)/s);
-
-//     let responseText = data.split(/Related Quer(y|ies):|Source:/)[0].trim(); // Extracts main response before "Related Query/Queries" or "Source"
-//     let sourceText = sourceMatch ? sourceMatch[1].trim() : "";
-//     let relatedQueriesText = relatedQueryMatch ? relatedQueryMatch[2].trim() : "";
-
-//     // Format bold text (convert **bold** to <strong>bold</strong>)
-//     responseText = responseText.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-
-//     // Split the response text into paragraphs based on hyphens
-//     const paragraphs = responseText.split(/(?<=\.)\s*-/); // Split at hyphens preceded by a period
-//     responseText = paragraphs
-//         .map((paragraph) => {
-//             // Remove leading/trailing whitespace and add a hyphen back (if it was removed during split)
-//             paragraph = paragraph.trim();
-//             if (!paragraph.startsWith("-")) {
-//                 paragraph = `- ${paragraph}`;
-//             }
-//             else {
-//                 paragraph = paragraph.replace(/^-/, "•"); // Add a space after the hyphen
-//             }
-//             return `<p>${paragraph}</p>`;
-//         })
-//         .join("");
-
-//     // Format main response
-//     if (responseText) {
-//         const responseDiv = document.createElement("div");
-//         responseDiv.classList.add("response-section");
-//         responseDiv.innerHTML = responseText; // Use the formatted paragraphs
-//         container.appendChild(responseDiv);
-//     }
-
-//     // Format source section (Display Source First)
-//     if (sourceText) {
-//         const sourceDiv = document.createElement("div");
-//         sourceDiv.classList.add("source-section");
-//         sourceDiv.innerHTML = `<h3><strong>Source</strong></h3><p>${sourceText.replace(/\n/g, "<br>")}</p>`;
-//         container.appendChild(sourceDiv);
-//     }
-
-//     // Format related queries (Display After Source)
-//     if (relatedQueriesText) {
-//         const queriesDiv = document.createElement("div");
-//         queriesDiv.classList.add("related-queries");
-//         queriesDiv.innerHTML = "<h3><strong>Related Queries</strong></h3>";
-//         const ul = document.createElement("ul");
-
-//         relatedQueriesText.split("\n").forEach((query) => {
-//             if (query.trim()) {
-//                 const li = document.createElement("li");
-//                 // Remove numbering (e.g., "1. ") and make it plain text
-//                 const queryText = query.replace(/^\d+\.\s*/, "").trim();
-//                 li.textContent = queryText; // Use textContent instead of innerHTML to avoid links
-//                 li.style.marginLeft = "20px"; // Match the indentation of other content
-//                 li.style.marginTop = "5px"; // Add some spacing between items
-//                 li.style.marginBottom = "5px"; // Add some spacing between items
-//                 li.style.listStyleType = "disc"; // Use bullet points
-//                 li.style.color = "inherit"; // Inherit the text color from the parent
-//                 li.style.fontSize = "inherit"; // Inherit the font size from the parent
-//                 ul.appendChild(li);
-//             }
-//         });
-
-//         queriesDiv.appendChild(ul);
-//         container.appendChild(queriesDiv);
-//     }
-
-//     return container.innerHTML;
-// }
 
     function processResponse(data) {
     if (data.error) {
