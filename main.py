@@ -138,7 +138,8 @@ get_db_connection()
 async def login(
     email: str = Form(...),
     password: str = Form(...),
-    section: str = Form(...)
+    section: str = Form(...),
+
     
 ):
     if not email or not password or not section:
@@ -174,8 +175,11 @@ async def login(
 
         # Redirect based on role
         if role_name == "admin":
+            encoded_name = quote(full_name)
             encoded_section = quote(section)
-            return RedirectResponse(url=f"/admin?section={encoded_section}", status_code=status.HTTP_303_SEE_OTHER)
+            # return RedirectResponse(url=f"/admin?section={encoded_section}", status_code=status.HTTP_303_SEE_OTHER)
+            return RedirectResponse(url=f"/role-select?name={encoded_name}&section={encoded_section}", status_code=status.HTTP_303_SEE_OTHER)
+            
         elif role_name == "user":
             # Use urllib.parse.quote to encode full_name and section
             encoded_name = quote(full_name)
@@ -196,7 +200,9 @@ async def login(
         cur.close()
         conn.close()
 
-
+@app.get("/role-select", response_class=HTMLResponse)
+async def user_page(request: Request):
+    return templates.TemplateResponse("admin_landing_page.html", {"request": request})
 
 
 @app.get("/authentication", response_class=HTMLResponse)
