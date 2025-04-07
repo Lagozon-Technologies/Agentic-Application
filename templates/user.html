@@ -570,7 +570,41 @@ html, body {
     display: block; /* Shows when toggled */
 }
 
+.follow-up-container {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--secondary-color);
+    border-radius: 8px;
+    border-left: 4px solid #1d7efd;
+}
 
+.follow-up-container h3 {
+    color: var(--text-color);
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+}
+
+.follow-up-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.follow-up-question {
+    padding: 8px 12px;
+    background: var(--secondary-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    /* Added border */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle white border with 10% opacity */
+}
+
+.follow-up-question:hover {
+    background: var(--secondary-hover-color);
+    /* Slightly more visible border on hover */
+    border-color: rgba(255, 255, 255, 0.2);
+}
 
 
 
@@ -674,6 +708,7 @@ document.addEventListener("DOMContentLoaded", function () {
     
     // ✅ Constants
 
+    // const API_BASE_URL = "http://127.0.0.1:8000";
     const API_BASE_URL = "https://lz-agenticapplication-ggc6g4a5a0ckhkgm.centralindia-01.azurewebsites.net";
     let isSubmitting = false;
         // ✅ Add these at the top with your other constants
@@ -959,16 +994,18 @@ document.addEventListener("DOMContentLoaded", function () {
  
 
 
-    function processResponse(data) {
+function processResponse(data) {
+    console.log("Full response data with follow-ups:", {
+        ...data,
+        follow_up_questions: data.follow_up_questions || {}
+    });
+
     if (data.error) {
         displayErrorMessage(data.error);
         return;
     }
 
     if (data.search_results) {
-        // console.log(data.search_results);
-        
-        // Format LLM response before displaying
         const formattedResponse = formatLLMResponse(data.search_results);
         addMessageToChat("ai", formattedResponse);
     }
@@ -980,8 +1017,65 @@ document.addEventListener("DOMContentLoaded", function () {
     if (data.tables?.length > 0) {
         data.tables.forEach(table => addTableToChat(table.table_html));
     }
+
+    // Debug follow-ups more thoroughly
+    const hasFollowUps = data.follow_up_questions && Object.keys(data.follow_up_questions).length > 0;
+    console.log("Has follow-up questions?", hasFollowUps, "Content:", data.follow_up_questions);
+    
+    if (hasFollowUps) {
+        console.log("Adding follow-up questions:", data.follow_up_questions);
+        addFollowUpQuestions(data.follow_up_questions);
+    }
 }
 
+function addFollowUpQuestions(followUps) {
+    console.log("Adding follow-up questions:", followUps); // Debugging
+    const followUpContainer = document.createElement("div");
+    followUpContainer.className = "follow-up-container";
+    
+    const title = document.createElement("h3");
+    title.textContent = "Suggested Follow-up Questions";
+    title.style.marginTop = "20px";
+    title.style.marginBottom = "10px";
+    title.style.color = "#1d7efd";
+    followUpContainer.appendChild(title);
+    
+    const questionsList = document.createElement("div");
+    questionsList.className = "follow-up-questions";
+    
+    Object.entries(followUps).forEach(([key, question]) => {
+        if (question && question.trim()) {
+            const questionElement = document.createElement("div");
+            questionElement.className = "follow-up-question";
+            questionElement.textContent = question;
+            questionElement.style.cursor = "pointer";
+            questionElement.style.padding = "8px 12px";
+            questionElement.style.margin = "5px 0";
+            questionElement.style.borderRadius = "4px";
+            questionElement.style.backgroundColor = "var(--secondary-color)";
+            questionElement.style.transition = "background-color 0.3s";
+            
+            questionElement.addEventListener("mouseover", () => {
+                questionElement.style.backgroundColor = "var(--secondary-hover-color)";
+            });
+            
+            questionElement.addEventListener("mouseout", () => {
+                questionElement.style.backgroundColor = "var(--secondary-color)";
+            });
+            
+            questionElement.addEventListener("click", () => {
+                promptInput.value = question;
+                promptInput.focus();
+            });
+            
+            questionsList.appendChild(questionElement);
+        }
+    });
+    
+    followUpContainer.appendChild(questionsList);
+    chatResults.appendChild(followUpContainer);
+    window.scrollTo(0, document.body.scrollHeight);
+}
 
     // Table Handling
     function addTableToChat(tableHTML) {
@@ -1132,9 +1226,9 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
         displayErrorMessage("No section selected! Please log in again.");
     }
+
     
     
-   
 
 });
 
@@ -1143,4 +1237,4 @@ document.addEventListener("DOMContentLoaded", function () {
       
     </script>
   </body>
-</html>
+</html> 
