@@ -106,6 +106,9 @@ async def read_root(request: Request):
         "tables": tables,        # Table dropdown based on database selection
         "question_dropdown": question_dropdown.split(','),  # Static questions from env
     })
+    
+    
+    
 
 
 from fastapi import FastAPI, HTTPException, Depends, status, Form
@@ -189,7 +192,13 @@ async def login(
                 status_code=status.HTTP_303_SEE_OTHER
             )
         elif role_name == "viewer":
-            return RedirectResponse(url="/viewer", status_code=status.HTTP_303_SEE_OTHER)
+            # Use urllib.parse.quote to encode full_name and section
+            encoded_name = quote(full_name)
+            encoded_section = quote(section)
+            return RedirectResponse(
+                url=f"/customer_landing_page?name={encoded_name}&section={encoded_section}",
+                status_code=status.HTTP_303_SEE_OTHER
+            )
         else:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -204,6 +213,14 @@ async def login(
 async def user_page(request: Request):
     return templates.TemplateResponse("admin_landing_page.html", {"request": request})
 
+@app.get("/user_client", response_class=HTMLResponse)
+async def user_page(request: Request):
+    return templates.TemplateResponse("user_client.html", {"request": request})
+
+
+@app.get("/customer_landing_page", response_class=HTMLResponse)
+async def user_page(request: Request):
+    return templates.TemplateResponse("customer_landing_page.html", {"request": request})
 
 @app.get("/authentication", response_class=HTMLResponse)
 async def user_page(request: Request):
@@ -309,7 +326,7 @@ def display_table_with_styles(data, table_name):
 
 
 # Invocation Function
-def invoke_chain(question, messages, selected_model, selected_subject,selected_tools):
+def invoke_chain(question, messages, selected_model, selected_subject, selected_tools):
     try:
         print(selected_tools)
         history = ChatMessageHistory()
@@ -318,6 +335,7 @@ def invoke_chain(question, messages, selected_model, selected_subject,selected_t
                 history.add_user_message(message["content"])
             else:
                 history.add_ai_message(message["content"])
+        
         runner = graph.compile()
         result = runner.invoke({
             'question': question,
@@ -326,67 +344,76 @@ def invoke_chain(question, messages, selected_model, selected_subject,selected_t
             'selected_subject': selected_subject,
             'selected_tools': selected_tools
         })
+        
         print(f"Result from runner.invoke:", result)
-        print("resultttttt",result.get("messages")[-1].name)
-
-        # result.get("intent") = classify_intent(intent)
+        
+        # Initialize response with common fields
+        response = {
+            "messages": result.get("messages", []),
+            "follow_up_questions": {}
+        }
+        
+        # Extract follow-up questions from all messages
+        for message in result.get("messages", []):
+            if hasattr(message, 'content'):
+                content = message.content
+                # Try to extract JSON from code block
+                json_match = re.search(r'```json\n({.*?})\n```', content, re.DOTALL)
+                if json_match:
+                    try:
+                        data = json.loads(json_match.group(1))
+                        for key, value in data.items():
+                            if key.startswith('follow_up_') and value:
+                                response["follow_up_questions"][key] = value
+                    except json.JSONDecodeError as e:
+                        print(f"Error parsing JSON from message: {e}")
+        
+        # Handle different intents
         if result.get("SQL_Statement"):
-            print(f"Result from runner.invoke:", result)
-            # Return SQL-related results
-            return {
+            print("Intent Classification: db_query")
+            response.update({
                 "intent": "db_query",
                 "SQL_Statement": result.get("SQL_Statement"),
-                "chosen_tables": result.get("chosen_tables"),
-                "tables_data": result.get("tables_data"),
+                "chosen_tables": result.get("chosen_tables", []),
+                "tables_data": result.get("tables_data", {}),
                 "db": result.get("db")
-            }
-
-
-
-        elif result.get("messages")[-1].name == "researcher":
-            print("Intent Classification: researcher (inside elif)")
-            # Return search results
-            return {
-                "intent": "researcher",
-                "search_results": result.get("messages")[-1].content  # Get the last message (search results)
-            }
-
-        elif result.get("messages")[-1].name == "intellidoc":   # Check if the last message is intellidoc
-            print("Intent Classification: intellidoc (inside elif)")
-            # Return document retrieval results
-            return {
-                "intent": "intellidoc",
-                "search_results": result.get("messages")[-1].content  # Get the last message (document retrieval results)
-            }
-        else:
-            print("Intent Classification: Unknown (inside else)")
-            # Handle other intents (e.g., intellidoc)
-            return {
-                "intent": result.get("messages")[-1].name,
-                "message": "This intent is not yet implemented."
-            }
-
-        #return result['SQL_Statement'], result['chosen_tables'], result['tables_data'], result.get('db')
+            })
+        elif result.get("messages") and len(result["messages"]) > 0:
+            last_message = result["messages"][-1]
+            if hasattr(last_message, 'name'):
+                print(f"Intent Classification: {last_message.name}")
+                response.update({
+                    "intent": last_message.name,
+                    "search_results": last_message.content
+                })
+            else:
+                print("Intent Classification: Unknown (no message name)")
+                response.update({
+                    "intent": "unknown",
+                    "message": "This intent is not yet implemented."
+                })
+        
+        print("Final response with follow-ups:", response)
+        return response
 
     except Exception as e:
         print("Error:", e)
-        custom_message = "Insufficient information to generate SQL Query."
-        return custom_message, [], {}, None
-
+        return {
+            "error": str(e),
+            "message": "Insufficient information to generate SQL Query."
+        }
+    
 @app.post("/submit")
 async def submit_query(
     section: str = Form(...),
     example_question: str = Form(...),
     user_query: str = Form(...),
-    tool_selected: List[str] = Form(default=[]),  # Define as List[str]
-
+    tool_selected: List[str] = Form(default=[]),
     page: Optional[int] = Query(1),
     records_per_page: Optional[int] = Query(5),
 ):
     selected_subject = section
     session_state['user_query'] = user_query
-
-    print(f"selected_subject: {selected_subject}, selected_tools: {tool_selected}")
 
     prompt = user_query if user_query else example_question
     if 'messages' not in session_state:
@@ -396,10 +423,25 @@ async def submit_query(
 
     try:
         result = invoke_chain(
-            prompt, session_state['messages'], "gpt-4o-mini", selected_subject,tool_selected
+            prompt, session_state['messages'], "gpt-4o-mini", selected_subject, tool_selected
         )
-        print(f"submit_query received: {result}")
 
+        response_data = {
+            "user_query": session_state['user_query'],
+            "follow_up_questions": {}  # Initialize as empty
+        }
+
+        # Extract follow-up questions from all messages
+        if "messages" in result:
+            for message in result["messages"]:
+                if hasattr(message, 'content'):
+                    content = message.content
+                    print(f"Message content for follow-up extraction: {content}")  # Debug
+                    follow_ups = extract_follow_ups(content)
+                    if follow_ups:
+                        response_data["follow_up_questions"].update(follow_ups)
+
+        # Handle different intents
         if result["intent"] == "db_query":
             session_state['generated_query'] = result.get("SQL_Statement", "")
             session_state['chosen_tables'] = result.get("chosen_tables", [])
@@ -407,56 +449,24 @@ async def submit_query(
 
             tables_html = []
             for table_name, data in session_state['tables_data'].items():
-
-
                 html_table = display_table_with_styles(data, table_name)
-
                 tables_html.append({
                     "table_name": table_name,
                     "table_html": html_table,
-
                 })
 
-            response_data={
-                "user_query": session_state['user_query'],
+            response_data.update({
                 "query": session_state['generated_query'],
                 "tables": tables_html
-            }
-
-
-
-
+            })
 
         elif result["intent"] == "researcher":
-            # If the intent is researcher, return search results
-            session_state['generated_query'] = result["search_results"]
-
-            response_data = {
-                "user_query": session_state['user_query'],
-                "search_results": result.get("search_results", "No results found."),
-            }
-
+            response_data["search_results"] = result.get("search_results", "No results found.")
 
         elif result["intent"] == "intellidoc":
-            print("result is: ", result)
+            response_data["search_results"] = result.get("search_results", "No results found.")
 
-            # Extract relevant parts
-            search_results = result.get("search_results", "No results found.")
-            print("Search Results:", search_results)
-           
-            response_data = {
-                "user_query": session_state['user_query'],
-                "search_results": search_results
-            }
-
-
-        else:
-            # Handle other intents (e.g., intellidoc)
-            response_data = {
-                "user_query": session_state['user_query'],
-                "message": result.get("message", "This intent is not yet implemented."),
-            }
-
+        print(f"Final response data with follow-ups: {response_data}")  # Debug
         return JSONResponse(content=response_data)
 
     except Exception as e:
@@ -714,6 +724,35 @@ async def upload_files(
     except Exception as e:
         logging.error(f"Error in upload_files: {e}")
         return JSONResponse({"status": "error", "message": f"Error during file upload: {str(e)}"})
+
+import json
+import re
+
+def extract_follow_ups(message_content):
+    """Extract follow-up questions from the message content."""
+    try:
+        # Try to find JSON in code block first
+        json_match = re.search(r'```json\n({.*?})\n```', message_content, re.DOTALL)
+        if json_match:
+            data = json.loads(json_match.group(1))
+            return {
+                k: v for k, v in data.items() 
+                if k.startswith('follow_up_') and v and isinstance(v, str)
+            }
+        
+        # If no code block, try parsing the whole content as JSON
+        try:
+            data = json.loads(message_content)
+            return {
+                k: v for k, v in data.items()
+                if k.startswith('follow_up_') and v and isinstance(v, str)
+            }
+        except json.JSONDecodeError:
+            return {}
+            
+    except Exception as e:
+        print(f"Error extracting follow-ups: {e}")
+        return {}
 
 async def use_llamaparse(file_content, file_name):
     try:
