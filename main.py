@@ -214,8 +214,19 @@ async def user_page(request: Request):
     return templates.TemplateResponse("admin_landing_page.html", {"request": request})
 
 @app.get("/user_client", response_class=HTMLResponse)
-async def user_page(request: Request):
-    return templates.TemplateResponse("user_client.html", {"request": request})
+async def user_client(request: Request):
+    # return templates.TemplateResponse("user_more.html", {"request": request})
+    tables = []
+
+    # Pass dynamically populated dropdown options to the template
+    return templates.TemplateResponse("user_client.html", {
+        "request": request,
+        "models": models,
+        "databases": databases,  # Dynamically populated database dropdown
+        "section": subject_areas2,
+        "tables": tables,        # Table dropdown based on database selection
+        "question_dropdown": question_dropdown.split(','),  # Static questions from env
+    })
 
 
 @app.get("/customer_landing_page", response_class=HTMLResponse)
