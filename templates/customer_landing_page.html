@@ -52,36 +52,43 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            padding: 1rem 2rem; /* Added reasonable padding */
         }
 
         .welcome-container {
-            text-align: center;
-            margin-bottom: 3rem;
-            max-width: 800px;
-        }
+    text-align: center;
+    margin: 0 auto; /* Changed from margin-bottom: 3rem */
+    max-width: 800px;
+    padding-top: 1rem; /* Reduced top padding */
+}
 
-        .welcome-title {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(to right, #1d7efd, #8f6fff);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+.welcome-title {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem; /* Reduced from 1rem */
+    background: linear-gradient(to right, #1d7efd, #8f6fff);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
 
-        .welcome-subtitle {
-            font-size: 1.25rem;
-            color: var(--subheading-color);
-            margin-bottom: 2rem;
-            line-height: 1.6;
-        }
+.welcome-subtitle {
+    font-size: 1.25rem;
+    color: var(--subheading-color);
+    margin-bottom: 1rem; /* Reduced from 2rem */
+    line-height: 1.6;
+}
 
+.role-cards {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem; /* Reduced from 2rem */
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 1.5rem; /* Added to control space after subtitle */
+}
         .role-cards {
             display: flex;
             justify-content: center;
@@ -146,10 +153,17 @@
             background: var(--accent-hover);
         }
 
-        .theme-toggle {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
+        /* Button container styles */
+        .button-container {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            padding: 1rem 0;
+            width: 100%;
+        }
+
+        /* Unified button styles */
+        .back-button, .theme-toggle {
             background: var(--secondary-color);
             border: none;
             width: 48px;
@@ -163,11 +177,12 @@
             transition: background-color 0.3s ease;
         }
 
-        .theme-toggle:hover {
+        .back-button:hover, .theme-toggle:hover {
             background: var(--secondary-hover-color);
         }
 
-        .theme-icon {
+        .back-button .material-icons-round, 
+        .theme-toggle .material-icons-round {
             font-size: 1.5rem;
             color: var(--text-color);
         }
@@ -257,6 +272,10 @@
         }
 
         @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
             .welcome-title {
                 font-size: 2rem;
             }
@@ -279,16 +298,20 @@
 </head>
 <body>
     <div class="container">
-        <button class="theme-toggle" id="themeToggle">
-            <span class="material-icons-round theme-icon">dark_mode</span>
-        </button>
-        
+        <div class="button-container">
+            <button class="back-button" id="backButton">
+                <span class="material-icons-round">arrow_back</span>
+            </button>
+            <button class="theme-toggle" id="themeToggle">
+                <span class="material-icons-round theme-icon">dark_mode</span>
+            </button>
+        </div>
+    
         <div class="welcome-container">
             <h1 class="welcome-title">Hello Admin, how would you like to login today?</h1>
-            <p class="welcome-subtitle">You have access to both admin and user interfaces. Please select your preferred role to continue.</p>
+            <p class="welcome-subtitle"></p>
             
             <div class="role-cards">
-                <!-- Admin Card with ID for JavaScript targeting -->
                 <div class="role-card" id="adminCard">
                     <span class="material-icons-round role-icon">admin_panel_settings</span>
                     <h3 class="role-title">Admin Dashboard</h3>
@@ -296,7 +319,6 @@
                     <button class="role-button">Enter as Admin</button>
                 </div>
                 
-                <!-- User Card with ID for JavaScript targeting -->
                 <div class="role-card" id="userCard">
                     <span class="material-icons-round role-icon">person</span>
                     <h3 class="role-title">User Interface</h3>
@@ -402,6 +424,11 @@
                 handler();
             });
         }
+
+        document.getElementById('backButton').addEventListener('click', () => {
+            window.history.back();
+        });
+        
         
         // Setup handlers for both cards
         setupCardClickHandler('adminCard', 'admin');
