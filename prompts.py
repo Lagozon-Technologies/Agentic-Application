@@ -31,12 +31,20 @@ final_prompt = ChatPromptTemplate.from_messages(
 # print ("This is final prompt ...." , final_prompt , " .. and this is few shot prompt.." , few_shot_prompt)
 answer_prompt = PromptTemplate.from_template(
     """Given the user question, corresponding SQL query, and SQL result, answer the user question.
-     Start with SQL query as first line of your answer then follow it with your answer in new line.
+     Start with SQL query as the first line of your answer, then follow it with your answer in a new line.
      Respond without modifying any of the nouns or numerical values.
-     DO NOT modify any of the nouns or numerical values received in SQL result.
+     DO NOT modify any of the nouns or numerical values received in the SQL result.
+     
+     After the answer, generate three relevant follow-up questions that the user might ask next.
 
 Question: {question}
 SQL Query: {query}
 SQL Result: {result}
-Answer: """
+Answer: {answer}
+
+Here are three relevant follow-up questions:
+1. {follow_up_1}
+2. {follow_up_2}
+3. {follow_up_3}
+"""
 )
