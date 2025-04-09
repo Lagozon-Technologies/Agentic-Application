@@ -374,10 +374,11 @@ def generate_sql(data: GraphState)-> dict:
     return {'SQL_Statement': SQL_Statement, 'db': db, 'chosen_tables': data['chosen_tables'], 'question': data['question'], 'messages': data['messages']}
 
 
-def execute_sql(data: GraphState)->dict:
-    print("dataaaa:",data)
+def execute_sql(data: GraphState) -> dict:
+    print("dataaaa:", data)
     selected_subject = data['selected_subject']
     SQL_Statement = data['SQL_Statement'].replace("SQL Query:", "").strip()
+    
     if selected_subject.startswith('Adv'):
         alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}')
     else:
@@ -392,7 +393,63 @@ def execute_sql(data: GraphState)->dict:
             tables_data[table] = df
             break  # Execute only once as in the original code
 
-    return {'SQL_Statement': SQL_Statement, 'chosen_tables': data['chosen_tables'], 'tables_data': tables_data}
+    # Create the rephrasing chain
+    llm = ChatOpenAI(model=data['selected_model'], temperature=0)
+    
+    rephrase_answer = (
+        RunnablePassthrough.assign(
+            answer=lambda x: llm.invoke(
+                f"""Rephrase this SQL result into a clear answer for the user's question.
+                Question: {x["question"]}
+                SQL Query: {x["query"]}
+                Result Data:\n{x["result"].to_string()}
+
+                Provide a concise answer in natural language.
+                Also suggest 3 relevant follow-up questions the user might ask next.
+                Format your response as JSON with these keys:
+                - "answer": The main answer
+                - "follow_up_1": First follow-up question
+                - "follow_up_2": Second follow-up question
+                - "follow_up_3": Third follow-up question
+                """
+            ).content
+        )
+    )
+
+    # Invoke the chain
+    response = rephrase_answer.invoke({
+        "question": data['question'],
+        "query": SQL_Statement,
+        "result": df,  # The pandas DataFrame result
+        "answer": "",
+        "follow_up_1": "",
+        "follow_up_2": "",
+        "follow_up_3": ""
+    })
+
+    try:
+        # Parse the JSON response
+        response_data = json.loads(response["answer"])
+        formatted_answer = response_data["answer"]
+        follow_ups = [
+            response_data["follow_up_1"],
+            response_data["follow_up_2"],
+            response_data["follow_up_3"]
+        ]
+    except json.JSONDecodeError:
+        # Fallback if JSON parsing fails
+        formatted_answer = response["answer"]
+        follow_ups = []
+
+    return {
+        'SQL_Statement': SQL_Statement,
+        'chosen_tables': data['chosen_tables'],
+        'tables_data': tables_data,
+        'messages': [
+            HumanMessage(content=formatted_answer, name="sql_answer"),
+            *[HumanMessage(content=fq, name="follow_up") for fq in follow_ups]
+        ]
+    }
 
 
 graph = StateGraph(GraphState)
