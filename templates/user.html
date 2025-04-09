@@ -605,6 +605,21 @@ html, body {
     /* Slightly more visible border on hover */
     border-color: rgba(255, 255, 255, 0.2);
 }
+.back-button {
+    position: absolute;
+    top: 20px;
+    right: -260px;
+    text-decoration: none;
+    color: black;
+    font-weight: 500;
+   background-color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.2s ease;
+}
 
 
 
@@ -647,6 +662,10 @@ html, body {
     <div class="container">
         <!-- App Header -->
         <header class="app-header">
+            <a href="javascript:history.back()" class="back-button" title="Go Back">
+                <span class="material-symbols-rounded">arrow_back</span> Back
+            </a>
+            
             <h1 class="heading" id="greeting">Hello, there</h1>
             <h2 class="sub-heading">How Can I help you?</h2>
         </header>
@@ -710,6 +729,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // const API_BASE_URL = "http://127.0.0.1:8000";
     const API_BASE_URL = "https://lz-agenticapplication-ggc6g4a5a0ckhkgm.centralindia-01.azurewebsites.net";
+    
     let isSubmitting = false;
         // ✅ Add these at the top with your other constants
     let mediaRecorder = null;
