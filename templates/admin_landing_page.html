@@ -46,15 +46,29 @@
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
+    /* Keep your existing properties */
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    
+    /* Remove or reduce the top padding */
+    padding: 0rem 0rem 0rem 0rem; /* top, right, bottom, left */
+}
+.button-container {
+    display: flex
+;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-right: -268px;
+    padding-top: 1rem;
+    width: 100%;
+    margin-top: 0px;
+}
 
         .welcome-container {
             text-align: center;
@@ -142,83 +156,75 @@
             background: var(--accent-hover);
         }
 
-        .theme-toggle {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            background: var(--secondary-color);
-            border: none;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: var(--card-shadow);
-            transition: background-color 0.3s ease;
-        }
+        .back-button, .theme-toggle {
+    background-color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    padding: 8px;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    transition: background-color 0.2s ease;
+}
 
-        .theme-toggle:hover {
-            background: var(--secondary-hover-color);
-        }
+.back-button:hover, .theme-toggle:hover {
+    background-color: #f0f0f0;
+}
 
-        .theme-icon {
-            font-size: 1.5rem;
-            color: var(--text-color);
-        }
 
-        @media (max-width: 768px) {
-            .welcome-title {
-                font-size: 2rem;
-            }
-            
-            .welcome-subtitle {
-                font-size: 1rem;
-            }
-            
-            .role-cards {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .role-card {
-                width: 100%;
-                max-width: 350px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
+
+@media (max-width: 768px) {
+    .welcome-title {
+        font-size: 2rem;
+    }
+    
+    .welcome-subtitle {
+        font-size: 1rem;
+    }
+    
+    .role-cards {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .role-card {
+        width: 100%;
+        max-width: 350px;
+    }
+}
+</style>
+
+<div class="container">
+    <div class="button-container">
+        <button class="back-button" id="backButton">
+            <span class="material-icons-round">arrow_back</span>
+        </button>
         <button class="theme-toggle" id="themeToggle">
             <span class="material-icons-round theme-icon">dark_mode</span>
         </button>
+    </div>
+
+    <div class="welcome-container">
+        <h1 class="welcome-title">Hello Admin, how would you like to login today?</h1>
+        <p class="welcome-subtitle">You have access to both admin and user interfaces. Please select your preferred role to continue.</p>
         
-        <div class="welcome-container">
-            <h1 class="welcome-title">Hello Admin, how would you like to login today?</h1>
-            <p class="welcome-subtitle">You have access to both admin and user interfaces. Please select your preferred role to continue.</p>
+        <div class="role-cards">
+            <div class="role-card" id="adminCard">
+                <span class="material-icons-round role-icon">admin_panel_settings</span>
+                <h3 class="role-title">Admin Dashboard</h3>
+                <p class="role-description">Access the full administrative interface with system controls, user management, and advanced analytics.</p>
+                <button class="role-button">Enter as Admin</button>
+            </div>
             
-            <div class="role-cards">
-                <!-- Admin Card with ID for JavaScript targeting -->
-                <div class="role-card" id="adminCard">
-                    <span class="material-icons-round role-icon">admin_panel_settings</span>
-                    <h3 class="role-title">Admin Dashboard</h3>
-                    <p class="role-description">Access the full administrative interface with system controls, user management, and advanced analytics.</p>
-                    <button class="role-button">Enter as Admin</button>
-                </div>
-                
-                <!-- User Card with ID for JavaScript targeting -->
-                <div class="role-card" id="userCard">
-                    <span class="material-icons-round role-icon">person</span>
-                    <h3 class="role-title">User Interface</h3>
-                    <p class="role-description">Switch to the standard user interface with simplified controls and standard features.</p>
-                    <button class="role-button">Enter as User</button>
-                </div>
+            <div class="role-card" id="userCard">
+                <span class="material-icons-round role-icon">person</span>
+                <h3 class="role-title">User Interface</h3>
+                <p class="role-description">Switch to the standard user interface with simplified controls and standard features.</p>
+                <button class="role-button">Enter as User</button>
             </div>
         </div>
     </div>
-
+</div>
     <script>
         // Theme toggle functionality
         const themeToggle = document.getElementById('themeToggle');
@@ -229,6 +235,9 @@
                            (window.matchMedia('(prefers-color-scheme: light)').matches ? 'dark' : 'light');
         document.documentElement.setAttribute('data-theme', savedTheme);
         
+        document.getElementById("backButton").addEventListener("click", function() {
+        window.history.back();
+    });
         // Update icon based on current theme
         if (savedTheme === 'light') {
             themeIcon.textContent = 'dark_mode';
