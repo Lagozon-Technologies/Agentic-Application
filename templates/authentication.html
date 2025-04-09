@@ -291,9 +291,33 @@ body {
     transform: translateX(200%);
 }
 
+.back-button {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 15px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.back-button:hover {
+    background: #e0e0e0;
+}
+
 </style>
 
 <body>
+    <!-- Back button in top-right corner -->
+    <button class="back-button" onclick="history.back()" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <i class="fa-solid fa-arrow-left"></i> Back
+    </button>
 
     <div class="container" id="container">
         <div class="form-container sign-up">
@@ -329,7 +353,6 @@ body {
             
                 <button type="submit">Sign In</button>
             </form>
-            
         </div>
         <div class="toggle-container">
             <div class="toggle">
@@ -346,6 +369,7 @@ body {
             </div>
         </div>
     </div>
+</body>
 
     <script>const container = document.getElementById('container');
         const registerBtn = document.getElementById('register');
