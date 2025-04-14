@@ -30,14 +30,8 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.storage.docstore import SimpleDocumentStore
 import logging
 from fastapi.responses import JSONResponse
-from langchain.agents import Tool, initialize_agent
-import os
-import requests
-from langchain.chat_models import ChatOpenAI
 from langchain.agents import Tool, initialize_agent, AgentType
 from langchain.memory import ConversationBufferMemory
-from langchain.utilities import WikipediaAPIWrapper, DuckDuckGoSearchAPIWrapper
-import streamlit as st
 from dotenv import load_dotenv
 
 
