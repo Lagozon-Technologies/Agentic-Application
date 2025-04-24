@@ -340,15 +340,13 @@ body {
                 <h1>Sign In</h1>
                 <input type="email" name="email" placeholder="Email" required>
                 <input type="password" name="password" placeholder="Password" required>
-            
+                <select name="database" id="database-dropdown" required onchange="updateSections()">
+                    <option value="" disabled selected>Select Database</option>
+                    <option value="adventureworks">AdventureWorks</option>
+                    <option value="postgres">PostgreSQL</option>
+                </select>
                 <select name="section" id="section-dropdown" required> 
                     <option value="" disabled selected>Select Section</option>
-                    <option value="Adv-HumanResources">Adv-HumanResources</option>
-                    <option value="Adv-Inventory">Adv-Inventory</option>
-                    <option value="Adv-Manufacturing">Adv-Manufacturing</option>
-                    <option value="Adv-Purchasing">Adv-Purchasing</option>
-                    <option value="Adv-Sales">Adv-Sales</option>
-                    <option value="Adv-Products">Adv-Products</option>
                 </select>
             
                 <button type="submit">Sign In</button>
@@ -371,27 +369,82 @@ body {
     </div>
 </body>
 
-    <script>const container = document.getElementById('container');
-        const registerBtn = document.getElementById('register');
-        const loginBtn = document.getElementById('login');
-        
-        registerBtn.addEventListener('click', () => {
-            container.classList.add("active");
-        });
-        
-        loginBtn.addEventListener('click', () => {
-            container.classList.remove("active");
-        });</script>
-
 <script>
+    // Toggle between sign-in and sign-up forms
+    const container = document.getElementById('container');
+    const registerBtn = document.getElementById('register');
+    const loginBtn = document.getElementById('login');
+    
+    registerBtn.addEventListener('click', () => {
+        container.classList.add("active");
+    });
+    
+    loginBtn.addEventListener('click', () => {
+        container.classList.remove("active");
+    });
+
+    // Function to update section dropdown based on selected database
+    function updateSections() {
+        const databaseDropdown = document.getElementById('database-dropdown');
+        const sectionDropdown = document.getElementById('section-dropdown');
+        const selectedDatabase = databaseDropdown.value;
+        
+        // Clear existing options except the first one
+        sectionDropdown.innerHTML = '<option value="" disabled selected>Select Section</option>';
+        
+        if (selectedDatabase === 'adventureworks') {
+            // Add AdventureWorks sections
+            const adventureworksSections = [
+                'Adv-HumanResources',
+                'Adv-Inventory',
+                'Adv-Manufacturing',
+                'Adv-Purchasing',
+                'Adv-Sales',
+                'Adv-Products'
+            ];
+            
+            adventureworksSections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section;
+                option.textContent = section;
+                sectionDropdown.appendChild(option);
+            });
+        } else if (selectedDatabase === 'postgres') {
+            // Add PostgreSQL sections
+            const postgresSections = [
+                'Finance',
+                'Customer Support',
+                'HR',
+                'Healthcare',
+                'Insurance',
+                'Inventory',
+                'Legal',
+                'Sales'
+            ];
+            
+            postgresSections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section;
+                option.textContent = section;
+                sectionDropdown.appendChild(option);
+            });
+        }
+    }
+    
+    // Initialize the sections based on default selection (if any)
+    document.addEventListener('DOMContentLoaded', function() {
+        updateSections();
+    });
+    // Login form submission handler
     document.getElementById("signin-btn").addEventListener("click", async function (event) {
         event.preventDefault(); // Prevent default form submission
     
         const form = document.querySelector('.sign-in form'); // Get form element
-        const emailInput = document.querySelector('.sign-in input[type="email"]').value.trim();
-        const passwordInput = document.querySelector('.sign-in input[type="password"]').value.trim();
-        const nameInput = document.querySelector('.sign-in input[type="text"]').value.trim();
-        const sectionDropdown = document.querySelector('.sign-in select').value; // Get selected section
+        const emailInput = document.querySelector('input[type="email"]').value.trim();
+        const passwordInput = document.querySelector('input[type="password"]').value.trim();
+        const nameInput = document.querySelector('input[type="text"]')?.value.trim(); // Optional if exists
+        const sectionDropdown = document.querySelector('#section-dropdown').value;
+        const databaseDropdown = document.querySelector('#database-dropdown').value;
     
         // Validation
         if (!emailInput) {
@@ -402,8 +455,12 @@ body {
             alert("Please enter your password before signing in!");
             return;
         }
-        if (!nameInput) {
+        if (nameInput && !nameInput) { // Only validate if name field exists
             alert("Please enter your name before signing in!");
+            return;
+        }
+        if (!databaseDropdown) {
+            alert("Please select a database before signing in!");
             return;
         }
         if (!sectionDropdown) {
@@ -420,8 +477,7 @@ body {
             });
     
             if (response.redirected) {
-                // Redirect user after successful login
-                // Append name and section as URL parameters
+                // Keep the original redirect URL exactly as it was
                 window.location.href = `/user_more?name=${encodeURIComponent(nameInput)}&section=${encodeURIComponent(sectionDropdown)}`;
             } else {
                 const data = await response.json();
@@ -432,8 +488,7 @@ body {
             alert("Something went wrong. Please try again.");
         }
     });
-    </script>
-    
+</script>  
         
 </body>
 
