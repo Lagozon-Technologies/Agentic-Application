@@ -19,7 +19,7 @@ import os, time
 import nest_asyncio
 from io import BytesIO
 import openai
-
+from prompts import insight_prompt
 import chromadb
 from llama_index.core import VectorStoreIndex
 from llama_index.core import StorageContext
@@ -465,10 +465,20 @@ async def submit_query(
                     "table_name": table_name,
                     "table_html": html_table,
                 })
+            chat_insight = None
+            if result["chosen_tables"]:
+                
+                insights_prompt = insight_prompt.format(
+                    sql_query=result["SQL_Statement"],
+                    table_data=result["tables_data"]
+                )
+
+                chat_insight = llm.invoke(insights_prompt).content
 
             response_data.update({
                 "query": session_state['generated_query'],
-                "tables": tables_html
+                "tables": tables_html,
+                "chat_insight":chat_insight
             })
 
         elif result["intent"] == "researcher":
