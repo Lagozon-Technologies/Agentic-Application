@@ -1031,7 +1031,7 @@ function processResponse(data) {
     }
 
     if (data.query) {
-        addMessageToChat("ai", `Generated SQL: <pre>${data.query}</pre>`);
+                addMessageToChat("ai", `Generated SQL: <pre>${data.query}</pre><br> Insights: ${data.chat_insight}`);
     }
 
     if (data.tables?.length > 0) {
