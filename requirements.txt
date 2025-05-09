@@ -74,6 +74,7 @@ llama-index-cli==0.4.0
 llama-index-core==0.12.18
 llama-index-embeddings-openai==0.3.1
 llama-index-indices-managed-llama-cloud==0.6.6
+llama-index-llms-langchain
 llama-index-llms-openai==0.3.20
 llama-index-multi-modal-llms-openai==0.4.3
 llama-index-program-openai==0.3.1
@@ -112,6 +113,7 @@ opentelemetry-semantic-conventions==0.51b0
 opentelemetry-util-http==0.51b0
 orjson==3.10.15
 overrides==7.7.0
+plotly
 packaging==24.2
 pandas==2.2.3
 pillow==11.1.0
