@@ -4,6 +4,7 @@ from langchain.memory import ChatMessageHistory
 from langchain_openai import ChatOpenAI
 from base import *
 from dotenv import load_dotenv
+from io import BytesIO, StringIO
 from state import session_state
 load_dotenv()  # Load environment variables from .env file
 from typing import Optional
@@ -13,12 +14,16 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.requests import Request
+from tempfile import NamedTemporaryFile
+import shutil
 from fastapi.responses import JSONResponse
 from typing import List
 import os, time
 import nest_asyncio
 from io import BytesIO
 import openai
+from sqlalchemy.orm import sessionmaker
+from prompts import insight_prompt
 
 import chromadb
 from llama_index.core import VectorStoreIndex
@@ -32,7 +37,26 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import Settings
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 import json
+from fastapi import FastAPI, Form, HTTPException, Query, UploadFile, File
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.templating import Jinja2Templates
+from starlette.requests import Request
+from fastapi.staticfiles import StaticFiles
+import plotly.graph_objects as go
+import plotly.express as px
+from langchain_openai import ChatOpenAI
+import openai, yaml
+import base64
+from pydantic import BaseModel
+from io import BytesIO
+import os, csv
+import pandas as pd
 
+from langchain.chains.openai_tools import create_extraction_chain_pydantic
+from langchain_core.pydantic_v1 import Field
+from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
+from typing import Optional
 # Setup environment variables
 LLAMA_API_KEY = os.getenv("LLAMA_API_KEY")
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
@@ -69,8 +93,16 @@ class Table(BaseModel):
 
 
 
-from urllib.parse import quote  
+from urllib.parse import quote
 
+# Initialize the BlobServiceClient
+try:
+    blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+    print("Blob service client initialized successfully.")
+except Exception as e:
+    print(f"Error initializing BlobServiceClient: {e}")
+    # Handle the error appropriately, possibly exiting the application
+    raise  # Re-raise the exception to prevent the app from starting
 
 
 # Set up static files and templates
@@ -114,7 +146,33 @@ async def read_root(request: Request):
 from fastapi import FastAPI, HTTPException, Depends, status, Form
 import psycopg2
 from psycopg2 import sql
+class ChartRequest(BaseModel):
+    """
+    Pydantic model for chart generation requests.
+    """
+    table_name: str
+    x_axis: str
+    y_axis: str
+    chart_type: str
 
+    class Config:  # This ensures compatibility with FastAPI
+        json_schema_extra = {
+            "example": {
+                "table_name": "example_table",
+                "x_axis": "column1",
+                "y_axis": "column2",
+                "chart_type": "Line Chart"
+            }
+        }
+def download_as_excel(data: pd.DataFrame, filename: str = "data.xlsx"):
+    """
+    Converts a Pandas DataFrame to an Excel file and returns it as a stream.
+    """
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        data.to_excel(writer, index=False, sheet_name='Sheet1')
+    output.seek(0)
+    return output
 def get_db_connection():
     try:
         conn = psycopg2.connect(
@@ -135,6 +193,210 @@ def get_db_connection():
         )
 
 get_db_connection()
+class TemporaryDocumentHandler:
+    def _init_(self):
+        self.temp_index = None
+        self.uploaded_files = []
+        self.parser_choice = "LlamaParse"  # Default parser
+
+    async def handle_upload(self, files: List[UploadFile], parser_choice: str):
+        """Handle temporary file uploads and create index."""
+        try:
+            self.parser_choice = parser_choice
+            self.uploaded_files = files
+
+            if files:
+                temp_documents = []
+                parsed_text = []
+
+                for uploaded_file in files:
+                    if parser_choice == "LlamaParse":
+                        file_content = await uploaded_file.read()
+                        result_text = await self.use_llamaparse(file_content, uploaded_file.filename)
+                        parsed_text.append(result_text)
+                    else:
+                        # Save file temporarily for unstructured parser
+                        with NamedTemporaryFile(delete=False) as temp_file:
+                            shutil.copyfileobj(uploaded_file.file, temp_file)
+                            temp_file_path = temp_file.name
+
+                        result_text = await self.use_unstructured(temp_file_path)
+                        parsed_text.append(result_text)
+                        os.unlink(temp_file_path)  # Clean up temp file
+
+                # Split text into chunks
+                TEMP_CHUNK_SIZE = os.getenv("TEMP_CHUNK_SIZE", 1000)
+                chunk_size = int(TEMP_CHUNK_SIZE)
+                for text in parsed_text:
+                    text_chunks = [
+                        text[i:i + chunk_size]
+                        for i in range(0, len(text), chunk_size)
+                    ]
+                    for chunk in text_chunks:
+                        document = Document(text=chunk)
+                        temp_documents.append(document)
+
+                # Create index
+                self.temp_index = VectorStoreIndex.from_documents(
+                    temp_documents,
+                    embed_model=Settings.embed_model
+                )
+
+                return {"status": "success", "message": "Files processed successfully"}
+
+            return {"status": "error", "message": "No files uploaded"}
+
+        except Exception as e:
+            return {"status": "error", "message": f"Error processing files: {str(e)}"}
+
+    async def query_index(self, question: str):
+        """Query the temporary index with a question."""
+        if not self.temp_index:
+            return {"status": "error", "message": "No index available - please upload documents first"}
+
+        try:
+            # Set up retriever
+            retriever = self.temp_index.as_retriever(similarity_top_k=3)
+
+            # Retrieve relevant nodes
+            retrieved_nodes = retriever.retrieve(question)
+            context_str = "\n\n".join([
+                r.get_content().replace("{", "").replace("}", "")[:4000]
+                for r in retrieved_nodes
+            ])
+
+            # Format QA prompt
+            qa_prompt_str = QA_PROMPT_STR  # Define this constant or get from env
+            fmt_qa_prompt = qa_prompt_str.format(
+                context_str=context_str,
+                query_str=question
+            )
+
+            # Prepare messages
+            chat_text_qa_msgs = [
+                ChatMessage(role=MessageRole.SYSTEM, content=LLM_INSTRUCTION),
+                ChatMessage(role=MessageRole.USER, content=fmt_qa_prompt),
+            ]
+            text_qa_template = ChatPromptTemplate(chat_text_qa_msgs)
+
+            # Query the index
+            result = self.temp_index.as_query_engine(
+                text_qa_template=text_qa_template,
+                llm=llm
+            ).query(question)
+
+            if result:
+                return {
+                    "status": "success",
+                    "response": result.response,
+                    "context": context_str
+                }
+            else:
+                return {"status": "error", "message": "No response generated"}
+
+        except Exception as e:
+            return {"status": "error", "message": f"Error querying index: {str(e)}"}
+
+    async def use_llamaparse(self, file_content: bytes, file_name: str):
+        """Parse file using LlamaParse."""
+        try:
+            with open(file_name, "wb") as f:
+                f.write(file_content)
+
+            parser = LlamaParse(
+                result_type='text',
+                verbose=True,
+                language="en",
+                num_workers=2
+            )
+            documents = await parser.aload_data([file_name])
+            os.remove(file_name)
+
+            return " ".join([doc.text for doc in documents])
+
+        except Exception as e:
+            raise Exception(f"LlamaParse error: {str(e)}")
+
+    async def use_unstructured(self, file_path: str):
+        """Parse file using Unstructured.io."""
+        try:
+            # Implement your unstructured.io parsing logic here
+            # This is a placeholder - replace with actual implementation
+            with open(file_path, "r") as f:
+                return f.read()
+        except Exception as e:
+            raise Exception(f"Unstructured.io error: {str(e)}")
+
+# Initialize the handler
+temp_doc_handler = TemporaryDocumentHandler()
+
+# API Endpoints
+@app.post("/upload-temp-docs")
+async def upload_temp_docs(
+    files: List[UploadFile] = File(...),
+    parser_choice: str = Form("LlamaParse")
+):
+    """Endpoint for uploading temporary documents."""
+    result = await temp_doc_handler.handle_upload(files, parser_choice)
+    return JSONResponse(result)
+
+@app.post("/query-temp-docs")
+async def query_temp_docs(
+    question: str = Form(...)
+):
+    """Endpoint for querying temporary documents."""
+    result = await temp_doc_handler.query_index(question)
+    return JSONResponse(result)
+class QueryInput(BaseModel):
+    """
+    Pydantic model for user query input.
+    """
+    query: str
+@app.post("/clear-temp-docs")
+async def clear_temp_docs():
+    """Endpoint for clearing temporary documents."""
+    temp_doc_handler.temp_index = None
+    temp_doc_handler.uploaded_files = []
+    return JSONResponse({"status": "success", "message": "Temporary documents cleared"})
+
+@app.post("/add_to_faqs/")
+async def add_to_faqs(data: QueryInput):
+    """
+    Adds a user query to the FAQ CSV file on Azure Blob Storage.
+
+    Args:
+        data (QueryInput): The user query.
+
+    Returns:
+        JSONResponse: A JSON response indicating success or failure.
+    """
+    query = data.query.strip()
+    if not query:
+        raise HTTPException(status_code=400, detail="Invalid query!")
+
+    blob_name = "Adv-HumanResources_questions.csv"
+
+    try:
+        # Get the blob client
+        blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob_name)
+
+        try:
+            # Download the blob content
+            blob_content = blob_client.download_blob().content_as_text()
+        except Exception as e:
+            # If the blob doesn't exist, create a new one with a header if needed
+            blob_content = "question\n"  # Replace with your actual header
+
+        # Append the new query to the existing CSV content
+        updated_csv_content = blob_content + f"{query}\n"  # Append new query
+
+        # Upload the updated CSV content back to Azure Blob Storage
+        blob_client.upload_blob(updated_csv_content.encode('utf-8'), overwrite=True)
+
+        return {"message": "Query added to FAQs successfully and uploaded to Azure Blob Storage!"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 # Login endpoint
 @app.post("/login")
@@ -209,6 +471,81 @@ async def login(
         cur.close()
         conn.close()
 
+def generate_chart_figure(data_df: pd.DataFrame, x_axis: str, y_axis: str, chart_type: str):
+    """
+    Generates a Plotly figure based on the specified chart type.
+    """
+    fig = None
+    if chart_type == "Line Chart":
+        fig = px.line(data_df, x=x_axis, y=y_axis)
+    elif chart_type == "Bar Chart":
+        fig = px.bar(data_df, x=x_axis, y=y_axis)
+    elif chart_type == "Scatter Plot":
+        fig = px.scatter(data_df, x=x_axis, y=y_axis)
+    elif chart_type == "Pie Chart":
+        fig = px.pie(data_df, names=x_axis, values=y_axis)
+    elif chart_type == "Histogram":
+        fig = px.histogram(data_df, x=x_axis, y=y_axis)
+    elif chart_type == "Box Plot":
+        fig = px.box(data_df, x=x_axis, y=y_axis)
+    elif chart_type == "Heatmap":
+        fig = px.density_heatmap(data_df, x=x_axis, y=y_axis)
+    elif chart_type == "Violin Plot":
+        fig = px.violin(data_df, x=x_axis, y=y_axis)
+    elif chart_type == "Area Chart":
+        fig = px.area(data_df, x=x_axis, y=y_axis)
+    elif chart_type == "Funnel Chart":
+        fig = px.funnel(data_df, x=x_axis, y=y_axis)
+    return fig
+
+@app.post("/generate-chart/")
+async def generate_chart(request: ChartRequest):
+    """
+    Generates a chart based on the provided request data.
+    """
+    try:
+        table_name = request.table_name
+        x_axis = request.x_axis
+        y_axis = request.y_axis
+        chart_type = request.chart_type
+
+        if "tables_data" not in globals() or table_name not in globals()["tables_data"]:
+            return JSONResponse(
+                content={"error": f"No data found for table {table_name}"},
+                status_code=404
+            )
+
+        data_df = globals()["tables_data"][table_name]
+        fig = generate_chart_figure(data_df, x_axis, y_axis, chart_type)
+
+        if fig:
+            return JSONResponse(content={"chart": fig.to_json()})
+        else:
+            return JSONResponse(content={"error": "Unsupported chart type selected."}, status_code=400)
+
+    except Exception as e:
+        return JSONResponse(
+            content={"error": f"An error occurred while generating the chart: {str(e)}"},
+            status_code=500
+        )
+
+@app.get("/download-table/")
+async def download_table(table_name: str):
+    """
+    Downloads a table as an Excel file.
+    """
+    if "tables_data" not in globals() or table_name not in globals()["tables_data"]:
+        raise HTTPException(status_code=404, detail=f"Table {table_name} data not found.")
+
+    data = globals()["tables_data"][table_name]
+    output = download_as_excel(data, filename=f"{table_name}.xlsx")
+
+    response = StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response.headers["Content-Disposition"] = f"attachment; filename={table_name}.xlsx"
+    return response
 @app.get("/role-select", response_class=HTMLResponse)
 async def user_page(request: Request):
     return templates.TemplateResponse("admin_landing_page.html", {"request": request})
@@ -252,6 +589,8 @@ async def user_more(request: Request):
         "question_dropdown": question_dropdown.split(','),  # Static questions from env
     })
 
+
+
 @app.post("/transcribe-audio/")
 async def transcribe_audio(file: UploadFile = File(...)):
     """
@@ -283,25 +622,121 @@ async def transcribe_audio(file: UploadFile = File(...)):
 
     except Exception as e:
         return JSONResponse(content={"error": f"Error transcribing audio: {str(e)}"}, status_code=500)
+@app.post("/submit_feedback/")
+async def submit_feedback(request: Request):
+    data = await request.json() # Corrected for FastAPI
 
+    table_name = data.get("table_name")
+    feedback_type = data.get("feedback_type")
+    user_query = data.get("user_query")
+    sql_query = data.get("sql_query")
 
-@app.get("/get_questions/")
-async def get_questions(subject: str):
-    """Fetch questions from the selected subject's CSV file."""
-    csv_file = f"{subject}_questions.csv"
-    if not os.path.exists(csv_file):
-        return JSONResponse(
-            content={"error": f"The file {csv_file} does not exist."}, status_code=404
-        )
+    if not table_name or not feedback_type:
+        return JSONResponse(content={"success": False, "message": "Table name and feedback type are required."}, status_code=400)
 
     try:
-        # Read the questions from the CSV
-        questions_df = pd.read_csv(csv_file)
+        # Create database connection
+        engine = create_engine(
+        f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}'
+        )
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        # Sanitize input (Escape single quotes)
+        table_name = escape_single_quotes(table_name)
+        user_query = escape_single_quotes(user_query)
+        sql_query = escape_single_quotes(sql_query)
+        feedback_type = escape_single_quotes(feedback_type)
+
+        # Insert feedback into database
+        insert_query = f"""
+        INSERT INTO lz_feedbacks (department, user_query, sql_query, table_name, data, feedback_type, feedback)
+        VALUES ('unknown', :user_query, :sql_query, :table_name, 'no data', :feedback_type, 'user feedback')
+        """
+
+        session.execute(insert_query, {
+        "table_name": table_name,
+        "user_query": user_query,
+        "sql_query": sql_query,
+        "feedback_type": feedback_type
+        })
+
+        session.commit()
+        session.close()
+
+        return JSONResponse(content={"success": True, "message": "Feedback submitted successfully!"})
+
+    except Exception as e:
+        session.rollback()
+        session.close()
+        return JSONResponse(content={"success": False, "message": f"Error submitting feedback: {str(e)}"}, status_code=500)
+
+@app.post("/transcribe-audio/")
+async def transcribe_audio(file: UploadFile = File(...)):
+    """
+    Transcribes an audio file using OpenAI's Whisper API.
+
+    Args:
+        file (UploadFile): The audio file to transcribe.
+
+    Returns:
+        JSONResponse: A JSON response containing the transcription or an error message.
+    """
+    try:
+
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="Missing OpenAI API Key.")
+        audio_bytes = await file.read()
+        audio_bio = BytesIO(audio_bytes)
+        audio_bio.name = "audio.webm"
+
+        # Fix: Using OpenAI API correctly
+        transcript = openai_client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_bio
+        )
+
+        # Fix: Access transcript.text instead of treating it as a dictionary
+        return {"transcription": transcript.text}
+
+    except Exception as e:
+        return JSONResponse(content={"error": f"Error transcribing audio: {str(e)}"}, status_code=500)
+@app.get("/get_questions")
+async def get_questions(subject: str):
+    """
+    Fetches questions from a CSV file in Azure Blob Storage based on the selected subject.
+
+    Args:
+        subject (str): The subject to fetch questions for.
+
+    Returns:
+        JSONResponse: A JSON response containing the list of questions or an error message.
+    """
+    csv_file_name = f"{subject}_questions.csv"
+    blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=csv_file_name)
+
+    try:
+        # Check if the blob exists
+        if not blob_client.exists():
+            print(f"file not found {csv_file_name}")
+            return JSONResponse(
+                content={"error": f"The file {csv_file_name} does not exist."}, status_code=404
+            )
+
+        # Download the blob content
+        blob_content = blob_client.download_blob().content_as_text()
+
+        # Read the CSV content
+        questions_df = pd.read_csv(StringIO(blob_content))
+
         if "question" in questions_df.columns:
             questions = questions_df["question"].tolist()
         else:
             questions = questions_df.iloc[:, 0].tolist()
+
         return {"questions": questions}
+
     except Exception as e:
         return JSONResponse(
             content={"error": f"An error occurred while reading the file: {str(e)}"}, status_code=500
@@ -369,7 +804,7 @@ def invoke_chain(question, messages, selected_model, selected_subject, selected_
             if hasattr(message, 'content'):
                 content = message.content
                 # Try to extract JSON from code block
-                json_match = re.search(r'```json\n({.*?})\n```', content, re.DOTALL)
+                json_match = re.search(r'json\n({.*?})\n', content, re.DOTALL)
                 if json_match:
                     try:
                         data = json.loads(json_match.group(1))
@@ -464,11 +899,22 @@ async def submit_query(
                 tables_html.append({
                     "table_name": table_name,
                     "table_html": html_table,
-                })
+                })          
+            chat_insight = None
+            if result["chosen_tables"]:
+
+                insights_prompt = insight_prompt.format(
+                    sql_query=result["SQL_Statement"],
+                    table_data=result["tables_data"]
+                )
+
+                chat_insight = llm.invoke(insights_prompt).content
+
 
             response_data.update({
                 "query": session_state['generated_query'],
-                "tables": tables_html
+                "tables": tables_html,
+                "chat_insight":chat_insight
             })
 
         elif result["intent"] == "researcher":
@@ -530,7 +976,7 @@ async def get_table_data(
 
 
 class Session:
-    def _init_(self):
+    def init(self):
         self.data = {}
 
     def get(self, key, default=None):
@@ -542,7 +988,7 @@ class Session:
     def pop(self, key, default=None):
         return self.data.pop(key, default)
 
-    def _contains_(self, item):
+    def contains(self, item):
         return item in self.data
 
     def items(self):
@@ -554,7 +1000,7 @@ class Session:
     def values(self):
         return self.data.values()
 
-    def _iter_(self):
+    def iter(self):
         return iter(self.data)
 session = Session()
 
@@ -637,41 +1083,34 @@ def upload_to_blob_storage(
                     print(f"Uploading {file_name} to {blob_name}...")
                     blob_client.upload_blob(file_content, overwrite=True)        
         
-
 @app.post("/upload")
 async def upload_files(
     request: Request,
     files: List[UploadFile] = File(...),
-    section: str = Form(...)
+    section : str = Form(...)
 ):
     """Handle file uploads for documents."""
     try:
+
         selected_section = section
+        print(selected_section)
+        # Ensure selected_section is valid
         if selected_section not in subject_areas2:
             raise ValueError("Invalid section selected.")
 
         collection_name = COLLECTION[subject_areas2.index(selected_section)]
+        print("collection name",collection_name)
         db_path = Chroma_DATABASE[subject_areas2.index(selected_section)]
 
-        logging.info(f"Selected section: {selected_section}, Collection: {collection_name}, DB Path: {db_path}")
+        print(f"Selected section: {selected_section}, Collection: {collection_name}, DB Path: {db_path}")
 
-        if not files:
-            logging.warning("No files uploaded.")
-            return JSONResponse({"status": "error", "message": "No files uploaded."})
+        if files:
+            # logging.info(f"Handling upload for collection: {collection}, DB Path: {db_path}")
 
-        # Initialize collection outside the file loop
-        collection_instance = init_chroma_collection(db_path, collection_name)
-        embed_model = OpenAIEmbedding()
-        
-        processed_files = []
-        failed_files = []
-
-        for file in files:
-            try:
+            for file in files:
                 file_content = await file.read()
                 file_name = file.filename
-                
-                # Upload to blob storage
+
                 upload_to_blob_storage(
                     AZURE_STORAGE_CONNECTION_STRING,
                     AZURE_CONTAINER_NAME,
@@ -680,61 +1119,117 @@ async def upload_files(
                     file_name,
                 )
 
-                # Parse the uploaded file using LlamaParse
-                parsed_text = await use_llamaparse(file_content, file_name)
+                try:
+                    # Parse the uploaded file using LlamaParse
+                    parsed_text =   await use_llamaparse(file_content, file_name)
 
-                # Split the parsed document into chunks
-                base_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=100)
-                nodes = base_splitter.get_nodes_from_documents([Document(text=parsed_text)])
+                    # Split the parsed document into chunks
+                    base_splitter = SentenceSplitter(chunk_size=512, chunk_overlap=100)
+                    nodes = base_splitter.get_nodes_from_documents([Document(text=parsed_text)])
 
-                # Prepare metadata and IDs
-                base_file_name = os.path.basename(file_name)
-                chunk_ids = [f"{base_file_name}_{i + 1}" for i in range(len(nodes))]
-                metadatas = [{"type": base_file_name, "source": file_name} for _ in nodes]
+                    # Initialize storage context (defaults to in-memory)
+                    storage_context = StorageContext.from_defaults()
 
-                # Process in batches
-                batch_size = 500
-                for i in range(0, len(nodes), batch_size):
-                    batch_nodes = nodes[i:i + batch_size]
-                    batch_metadatas = metadatas[i:i + batch_size]
-                    batch_ids = chunk_ids[i:i + batch_size]
+                    # Prepare for storing document chunks
+                    base_file_name = os.path.basename(file_name)
+                    chunk_ids = []
+                    metadatas = []
 
-                    try:
-                        collection_instance.add(
-                            documents=[node.text for node in batch_nodes],
-                            metadatas=batch_metadatas,
-                            ids=batch_ids,
-                        )
-                        time.sleep(2)  # Rate limit protection
-                    except Exception as e:
-                        logging.error(f"Error adding batch {i} of file {file_name}: {e}")
-                        raise
+                    for i, node in enumerate(nodes):
+                        chunk_id = f"{base_file_name}_{i + 1}"
+                        chunk_ids.append(chunk_id)
 
-                processed_files.append(file_name)
-                logging.info(f"Successfully processed file: {file_name}")
+                        metadata = {"type": base_file_name, "source": file_name}
+                        metadatas.append(metadata)
 
-            except Exception as e:
-                logging.error(f"Error processing file {file_name}: {e}")
-                failed_files.append(file_name)
+                        document = Document(text=node.text, metadata=metadata, id_=chunk_id)
+                        storage_context.docstore.add_documents([document])
 
-        # Final response
-        if failed_files:
-            return JSONResponse({
-                "status": "partial_success",
-                "message": f"Processed {len(processed_files)} files successfully, {len(failed_files)} failed",
-                "processed_files": processed_files,
-                "failed_files": failed_files
-            })
-        
-        return JSONResponse({
-            "status": "success",
-            "message": f"All {len(processed_files)} files processed successfully",
-            "processed_files": processed_files
-        })
+                    # Load existing documents from the .json file if it exists
+                    for i in range(len(DOCSTORE)):
+                        if collection_name in DOCSTORE[i]:
+                            coll = DOCSTORE[i]
+                            print("collection name",coll)
+                            break
+                    existing_documents = {}
+                    if os.path.exists(coll):
+                        with open(coll, "r") as f:
+                            existing_documents = json.load(f)
 
+                        # Persist the storage context (if necessary)
+                        storage_context.docstore.persist(coll)
+
+                        # Load new data from the same file (or another source)
+                        with open(coll, "r") as f:
+                            st_data = json.load(f)
+
+                        # Update existing_documents with st_data
+                        for key, value in st_data.items():
+                            if key in existing_documents:
+                                # Ensure the existing value is a list before extending
+                                if isinstance(existing_documents[key], list):
+                                    existing_documents[key].extend(
+                                        value
+                                    )  # Merge lists if key exists
+                                else:
+                                    # If it's not a list, you can choose to replace it or handle it differently
+                                    existing_documents[key] = (
+                                        [existing_documents[key]] + value
+                                        if isinstance(value, list)
+                                        else [existing_documents[key], value]
+                                    )
+                            else:
+                                existing_documents[key] = value  # Add new key-value pair
+
+                        merged_dict = {}
+                        for d in existing_documents["docstore/data"]:
+                            merged_dict.update(d)
+                        final_dict = {}
+                        final_dict["docstore/data"] = merged_dict
+
+                        # Write the updated documents back to the JSON file
+                        with open(coll, "w") as f:
+                            json.dump(final_dict, f, indent=4)
+
+                    else:
+                        # Persist the storage context if the file does not exist
+                        storage_context.docstore.persist(coll)
+
+
+                    collection_instance = init_chroma_collection(db_path, collection_name)
+
+                    embed_model = OpenAIEmbedding()
+                    VectorStoreIndex(nodes, storage_context=storage_context, embed_model=embed_model)
+                    batch_size = 500
+                    for i in range(0, len(nodes), batch_size):
+                        batch_nodes = nodes[i : i + batch_size]
+                        try:
+                            collection_instance.add(
+                                documents=[node.text for node in batch_nodes],
+                                metadatas=metadatas[i : i + batch_size],
+                                ids=chunk_ids[i : i + batch_size],
+                            )
+                            time.sleep(5)  # Add a retry with a delay
+                            logging.info(f"Files uploaded and processed successfully for collection: {collection_name}")
+                            return JSONResponse({"status": "success", "message": "Documents uploaded successfully."})
+
+
+                        except:
+                            # Handle rate limit by adding a delay or retry mechanism
+                            print("Rate limit error has occurred at this moment")
+                            return JSONResponse({"status": "error", "message": f"Error processing file {file_name}."})
+
+
+
+                except Exception as e:
+                    logging.error(f"Error processing file {file_name}: {e}")
+                    return JSONResponse({"status": "error", "message": f"Error processing file {file_name}."})
+
+        logging.warning("No files uploaded.")
+        return JSONResponse({"status": "error", "message": "No files uploaded."})
     except Exception as e:
         logging.error(f"Error in upload_files: {e}")
-        return JSONResponse({"status": "error", "message": f"Error during file upload: {str(e)}"})
+        return JSONResponse({"status": "error", "message": "Error during file upload."})
 
 import json
 import re
