@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>InsightAgent.ai</title></title>
+    <title>ALLIANCEAI COMPLY</title>
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0"
@@ -1246,7 +1246,7 @@ body {
     
         // ✅ Constants
         //const API_BASE_URL = "http://127.0.0.1:8000";
-          const API_BASE_URL = "https://lz-agenticapplication-ggc6g4a5a0ckhkgm.centralindia-01.azurewebsites.net";
+        const API_BASE_URL = "https://lz-agenticapplication-ggc6g4a5a0ckhkgm.centralindia-01.azurewebsites.net";
         //const API_BASE_URL = "https://alameda-demo-sandbox-esaxc5epgae0cueg.centralindia-01.azurewebsites.net";
 
     
@@ -1324,56 +1324,49 @@ if (settingsLink && settingsOptions) {
         });
     
         // ✅ Core Functions
-      async function fetchQuestions(section) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/get_questions/?subject=${section}`);
-        const data = await response.json();
-        displaySuggestions(data);  // Pass the entire response object
-    } catch (error) {
-        console.error("Fetch questions error:", error);
-        displaySuggestions([]);  // Fallback to empty array
-    }
-}
+        async function fetchQuestions(section) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/get_questions/?subject=${section}`);
+                const data = await response.json();
+                displaySuggestions(data.questions || []);
+            } catch (error) {
+                console.error("Fetch questions error:", error);
+                displaySuggestions([]);
+            }
+        }
     
-       function displaySuggestions(responseData) {
-    suggestionsList.innerHTML = "";
-    
-    // Extract questions from response (handles both array and object responses)
-    const questions = Array.isArray(responseData) ? 
-        responseData : 
-        (responseData.questions || []);
-    
-    const colors = [
-        "#1d7efd", "#28a745", "#ffc107", "#6f42c1", "#e91e63",
-        "#17a2b8", "#fd7e14", "#20c997", "#6610f2", "#d63384",
-        "#1d7efd", "#28a745", "#ffc107", "#6f42c1", "#e91e63",
-        "#17a2b8", "#fd7e14", "#20c997", "#6610f2", "#d63384"
-    ];
-    
-    const icons = [
-        'draw', 'lightbulb', 'explore', 'list', 'gesture',
-        'rocket_launch', 'psychology', 'auto_awesome', 'hub', 'insights',
-        'palette', 'science', 'calculate', 'code', 'school',
-        'work', 'favorite', 'star', 'public', 'bolt'
-    ];
+        function displaySuggestions(questions) {
+            suggestionsList.innerHTML = "";
+            const colors = [
+            "#1d7efd", "#28a745", "#ffc107", "#6f42c1", "#e91e63",
+            "#17a2b8", "#fd7e14", "#20c997", "#6610f2", "#d63384",
+            "#1d7efd", "#28a745", "#ffc107", "#6f42c1", "#e91e63",
+            "#17a2b8", "#fd7e14", "#20c997", "#6610f2", "#d63384"
+        ];
+        // Icons for each suggestion
+        const icons = [
+            'draw', 'lightbulb', 'explore', 'list', 'gesture',
+            'rocket_launch', 'psychology', 'auto_awesome', 'hub', 'insights',
+            'palette', 'science', 'calculate', 'code', 'school',
+            'work', 'favorite', 'star', 'public', 'bolt'
+        ];
 
-    questions.slice(0, 20).forEach((question, index) => {
-        const li = document.createElement("li");
-        li.className = "suggestions-item";
-        li.innerHTML = `
-            <p class="text">${question}</p>
-            <span class="material-symbols-rounded" style="color: ${colors[index]}">
-                ${icons[index]}
-            </span>`;
+        questions.slice(0, 20).forEach((question, index) => {
+            const li = document.createElement("li");
+            li.className = "suggestions-item";
+            li.innerHTML = `
+                <p class="text">${question}</p>
+                <span class="material-symbols-rounded" style="color: ${colors[index]}">
+                    ${icons[index]}
+                </span>`;
 
-        li.addEventListener("click", () => {
-            promptInput.value = question;
-            promptInput.focus();
-        });
-        
-        suggestionsList.appendChild(li);
-    });
-}
+                li.addEventListener("click", () => {
+                    promptInput.value = question;
+                    promptInput.focus();
+                });
+                suggestionsList.appendChild(li);
+            });
+        }
     
         async function submitQuery(query) {
             isSubmitting = true;
@@ -2156,9 +2149,15 @@ function addPaginationToVisualizationTable(uniqueId, table) {
                 alert("No query to add to FAQs");
                 return;
             }
-
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const section = urlParams.get("section");
+            if (!section) {
+    alert("Could not determine subject area");
+    return;
+}
             try {
-                const response = await fetch(`${API_BASE_URL}/add_to_faqs/`, {
+                const response = await fetch(`${API_BASE_URL}/add_to_faqs/?subject=${encodeURIComponent(section)}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
