@@ -360,43 +360,47 @@ async def clear_temp_docs():
     return JSONResponse({"status": "success", "message": "Temporary documents cleared"})
 
 @app.post("/add_to_faqs/")
-async def add_to_faqs(data: QueryInput):
+async def add_to_faqs(
+    data: QueryInput,
+    subject: str = Query(..., description="Subject area as query parameter")
+):
     """
-    Adds a user query to the FAQ CSV file on Azure Blob Storage.
-
-    Args:
-        data (QueryInput): The user query.
-
-    Returns:
-        JSONResponse: A JSON response indicating success or failure.
+    Adds a user query to the FAQ CSV file for the specified subject.
+    Subject comes from URL parameter, not request body.
     """
     query = data.query.strip()
     if not query:
-        raise HTTPException(status_code=400, detail="Invalid query!")
+        raise HTTPException(status_code=400, detail="Question cannot be empty!")
+    if not subject:
+        raise HTTPException(status_code=400, detail="Subject must be specified!")
 
-    blob_name = "Adv-HumanResources_questions.csv"
-
+    blob_name = f"{subject}_questions.csv"
+    
     try:
-        # Get the blob client
-        blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob_name)
+        blob_client = blob_service_client.get_blob_client(
+            container=AZURE_CONTAINER_NAME, 
+            blob=blob_name
+        )
 
+        # Try to download existing content or start with header
         try:
-            # Download the blob content
             blob_content = blob_client.download_blob().content_as_text()
-        except Exception as e:
-            # If the blob doesn't exist, create a new one with a header if needed
-            blob_content = "question\n"  # Replace with your actual header
+        except:
+            blob_content = "question\n"  # Default header if file doesn't exist
 
-        # Append the new query to the existing CSV content
-        updated_csv_content = blob_content + f"{query}\n"  # Append new query
-
-        # Upload the updated CSV content back to Azure Blob Storage
+        # Add new question
+        updated_csv_content = blob_content + f"{query}\n"
+        
+        # Upload back to Azure
         blob_client.upload_blob(updated_csv_content.encode('utf-8'), overwrite=True)
 
-        return {"message": "Query added to FAQs successfully and uploaded to Azure Blob Storage!"}
+        return {"message": f"Question added to {subject} FAQs successfully!"}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Error saving question: {str(e)}"
+        )
 
 # Login endpoint
 @app.post("/login")
