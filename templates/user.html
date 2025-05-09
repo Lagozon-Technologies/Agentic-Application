@@ -1326,7 +1326,7 @@ if (settingsLink && settingsOptions) {
         // ✅ Core Functions
 async function fetchQuestions(section) {
     try {
-        const response = await fetch(`${API_BASE_URL}/get_questions/?subject=${section}`);
+        const response = await fetch(`${API_BASE_URL}/get_questions?subject=${section}`);
         const data = await response.json();
         displaySuggestions(data);  // Pass the entire response object
     } catch (error) {
