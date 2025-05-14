@@ -467,6 +467,7 @@ async def clear_temp_docs():
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 
+
 @app.post("/add_to_faqs/")
 async def add_to_faqs(
     data: QueryInput,
@@ -1348,11 +1349,11 @@ import json
 import re
 
 
-
 def extract_follow_ups(message_content):
     """Extract follow-up questions from the message content, including:
     1. JSON-formatted follow-up questions
-    2. Related queries listed in the text"""
+    2. Related queries listed in the text
+    3. "Related Query:" sections in the response"""
 
     follow_ups = {}
 
@@ -1377,31 +1378,48 @@ def extract_follow_ups(message_content):
         except json.JSONDecodeError:
             pass
 
-        # Now extract Related Queries from text
+        # Now extract Related Queries from text - multiple patterns
+        # Pattern 1: "Related Queries:" section
         related_queries_section = re.search(
-            r'Related Queries:\s*(.*?)(?=\n\n|\Z)',
+            r'(Related Queries|Related Query):\s*(.*?)(?=\n\n|\Z)',
             message_content,
             re.DOTALL | re.IGNORECASE
         )
 
         if related_queries_section:
-            queries_text = related_queries_section.group(1)
-            # Extract numbered questions
+            queries_text = related_queries_section.group(2)
+            # Extract numbered questions or bullet points
             numbered_questions = re.findall(
-                r'\d+\.\s*(.*?)(?=\n\d+\.|\n*\Z)',
+                r'(?:\d+\.|\-)\s*(.*?)(?=\n(?:\d+\.|\-)|\n*\Z)',
                 queries_text,
                 re.DOTALL
             )
 
             # Add to follow_ups with follow_up_N keys
-            for i, question in enumerate(numbered_questions, 1):
+            for i, question in enumerate(numbered_questions, len(follow_ups) + 1):
                 key = f'follow_up_{i}'
                 follow_ups[key] = question.strip()
+
+        # Pattern 2: Questions embedded in the text after "Related Query:"
+        embedded_queries = re.findall(
+            r'Related Query:\s*\n*(.*?)(?=\n\n|\Z)',
+            message_content,
+            re.DOTALL | re.IGNORECASE
+        )
+
+        if embedded_queries:
+            for i, query in enumerate(embedded_queries, len(follow_ups) + 1):
+                # Clean up the query (remove leading/trailing whitespace, quotes, etc.)
+                clean_query = query.strip().strip('"').strip("'").strip('-').strip()
+                if clean_query:
+                    key = f'follow_up_{i}'
+                    follow_ups[key] = clean_query
 
     except Exception as e:
         print(f"Error extracting follow-ups: {e}")
 
     return follow_ups
+    
 async def use_llamaparse(file_content, file_name):
     try:
         with open(file_name, "wb") as f:
