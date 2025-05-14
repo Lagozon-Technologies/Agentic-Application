@@ -3,6 +3,7 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.memory import ChatMessageHistory
 from langchain_openai import ChatOpenAI
 from base import *
+
 from dotenv import load_dotenv
 from io import BytesIO, StringIO
 from state import session_state
@@ -51,6 +52,15 @@ from pydantic import BaseModel
 from io import BytesIO
 import os, csv
 import pandas as pd
+
+# Add these imports at the top of your FastAPI file
+from azure.core.credentials import AzureKeyCredential
+from azure.ai.formrecognizer import DocumentAnalysisClient
+from bill_datas import invoice_data, reciept_data, awb_data, packing_data
+import os
+from io import BytesIO
+from werkzeug.utils import secure_filename
+
 
 from langchain.chains.openai_tools import create_extraction_chain_pydantic
 from langchain_core.pydantic_v1 import Field
@@ -138,9 +148,9 @@ async def read_root(request: Request):
         "tables": tables,        # Table dropdown based on database selection
         "question_dropdown": question_dropdown.split(','),  # Static questions from env
     })
-    
-    
-    
+
+
+
 
 
 from fastapi import FastAPI, HTTPException, Depends, status, Form
@@ -193,8 +203,10 @@ def get_db_connection():
         )
 
 get_db_connection()
+def escape_single_quotes(input_string):
+    return input_string.replace("'","''")
 class TemporaryDocumentHandler:
-    def _init_(self):
+    def init(self):
         self.temp_index = None
         self.uploaded_files = []
         self.parser_choice = "LlamaParse"  # Default parser
@@ -346,6 +358,7 @@ async def query_temp_docs(
 ):
     """Endpoint for querying temporary documents."""
     result = await temp_doc_handler.query_index(question)
+
     return JSONResponse(result)
 class QueryInput(BaseModel):
     """
@@ -359,6 +372,100 @@ async def clear_temp_docs():
     temp_doc_handler.uploaded_files = []
     return JSONResponse({"status": "success", "message": "Temporary documents cleared"})
 
+# from datetime import datetime
+
+# # Database connection
+# def get_connection():
+#     return psycopg2.connect(
+#         dbname="postgres",
+#         user="postgres",
+#         password="Satya@2002",
+#         host="localhost",
+#         port="5432"
+#     )
+
+# # Define the expected keys (mapping incoming camel/pascal to snake_case)
+# FIELD_MAP = {
+#     "Shipping Address": "shipping_address",
+#     "Consignee Name": "consignee_name",
+#     "Shipper Name": "shipper_name",
+#     "Consignee Address": "consignee_address",
+#     "Airway Bill Number": "airway_bill_number",
+#     "Issuer": "issuer",
+#     "Total Weight": "total_weight",
+#     "Execution Date": "execution_date",
+#     "Total Bill": "total_bill",
+#     "Currency": "currency",
+#     "Departure Airport": "departure_airport",
+#     "Destination Airport": "destination_airport",
+#     "Shipper Account Number": "shipper_account_number"
+# }
+
+# @app.post("/insert_shipments")
+# async def insert_shipments(request: Request):
+#     try:
+#         data = await request.json()
+
+#         # Normalize and insert
+#         conn = get_connection()
+#         cur = conn.cursor()
+
+#         for entry in data:
+#             row = {}
+#             for key, value in entry.items():
+#                 mapped_key = FIELD_MAP.get(key)
+#                 if mapped_key:
+#                     row[mapped_key] = value
+
+#             # Format the date
+#             execution_date = None
+#             if "execution_date" in row:
+#                 try:
+#                     execution_date = datetime.strptime(row["execution_date"], "%d-%b-%Y").date()
+#                 except ValueError:
+#                     raise HTTPException(status_code=400, detail="Invalid date format. Expected dd-MMM-yyyy")
+
+#             cur.execute("""
+#                 INSERT INTO shipments (
+#                     shipping_address,
+#                     consignee_name,
+#                     shipper_name,
+#                     consignee_address,
+#                     airway_bill_number,
+#                     issuer,
+#                     total_weight,
+#                     execution_date,
+#                     total_bill,
+#                     currency,
+#                     departure_airport,
+#                     destination_airport,
+#                     shipper_account_number
+#                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+#                 ON CONFLICT (airway_bill_number) DO NOTHING;
+#             """, (
+#                 row.get("shipping_address"),
+#                 row.get("consignee_name"),
+#                 row.get("shipper_name"),
+#                 row.get("consignee_address"),
+#                 row.get("airway_bill_number"),
+#                 row.get("issuer"),
+#                 float(row.get("total_weight", 0)),
+#                 execution_date,
+#                 float(row.get("total_bill", 0)),
+#                 row.get("currency"),
+#                 row.get("departure_airport"),
+#                 row.get("destination_airport"),
+#                 row.get("shipper_account_number")
+#             ))
+
+#         conn.commit()
+#         cur.close()
+#         conn.close()
+
+#         return {"message": "Data inserted successfully!"}
+
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
 @app.post("/add_to_faqs/")
 async def add_to_faqs(
     data: QueryInput,
@@ -375,10 +482,10 @@ async def add_to_faqs(
         raise HTTPException(status_code=400, detail="Subject must be specified!")
 
     blob_name = f"{subject}_questions.csv"
-    
+
     try:
         blob_client = blob_service_client.get_blob_client(
-            container=AZURE_CONTAINER_NAME, 
+            container=AZURE_CONTAINER_NAME,
             blob=blob_name
         )
 
@@ -390,7 +497,7 @@ async def add_to_faqs(
 
         # Add new question
         updated_csv_content = blob_content + f"{query}\n"
-        
+
         # Upload back to Azure
         blob_client.upload_blob(updated_csv_content.encode('utf-8'), overwrite=True)
 
@@ -398,7 +505,7 @@ async def add_to_faqs(
 
     except Exception as e:
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Error saving question: {str(e)}"
         )
 
@@ -409,7 +516,7 @@ async def login(
     password: str = Form(...),
     section: str = Form(...),
 
-    
+
 ):
     if not email or not password or not section:
         raise HTTPException(
@@ -448,7 +555,7 @@ async def login(
             encoded_section = quote(section)
             # return RedirectResponse(url=f"/admin?section={encoded_section}", status_code=status.HTTP_303_SEE_OTHER)
             return RedirectResponse(url=f"/role-select?name={encoded_name}&section={encoded_section}", status_code=status.HTTP_303_SEE_OTHER)
-            
+
         elif role_name == "user":
             # Use urllib.parse.quote to encode full_name and section
             encoded_name = quote(full_name)
@@ -607,7 +714,7 @@ async def transcribe_audio(file: UploadFile = File(...)):
         JSONResponse: A JSON response containing the transcription or an error message.
     """
     try:
-        
+
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise HTTPException(status_code=500, detail="Missing OpenAI API Key.")
@@ -621,7 +728,7 @@ async def transcribe_audio(file: UploadFile = File(...)):
             file=audio_bio
         )
 
-        # Fix: Access `transcript.text` instead of treating it as a dictionary
+        # Fix: Access transcript.text instead of treating it as a dictionary
         return {"transcription": transcript.text}
 
     except Exception as e:
@@ -785,7 +892,7 @@ def invoke_chain(question, messages, selected_model, selected_subject, selected_
                 history.add_user_message(message["content"])
             else:
                 history.add_ai_message(message["content"])
-        
+
         runner = graph.compile()
         result = runner.invoke({
             'question': question,
@@ -794,15 +901,15 @@ def invoke_chain(question, messages, selected_model, selected_subject, selected_
             'selected_subject': selected_subject,
             'selected_tools': selected_tools
         })
-        
+
         print(f"Result from runner.invoke:", result)
-        
+
         # Initialize response with common fields
         response = {
             "messages": result.get("messages", []),
             "follow_up_questions": {}
         }
-        
+
         # Extract follow-up questions from all messages
         for message in result.get("messages", []):
             if hasattr(message, 'content'):
@@ -817,7 +924,7 @@ def invoke_chain(question, messages, selected_model, selected_subject, selected_
                                 response["follow_up_questions"][key] = value
                     except json.JSONDecodeError as e:
                         print(f"Error parsing JSON from message: {e}")
-        
+
         # Handle different intents
         if result.get("SQL_Statement"):
             print("Intent Classification: db_query")
@@ -842,7 +949,7 @@ def invoke_chain(question, messages, selected_model, selected_subject, selected_
                     "intent": "unknown",
                     "message": "This intent is not yet implemented."
                 })
-        
+
         print("Final response with follow-ups:", response)
         return response
 
@@ -852,7 +959,7 @@ def invoke_chain(question, messages, selected_model, selected_subject, selected_
             "error": str(e),
             "message": "Insufficient information to generate SQL Query."
         }
-    
+
 @app.post("/submit")
 async def submit_query(
     section: str = Form(...),
@@ -888,6 +995,7 @@ async def submit_query(
                     content = message.content
                     print(f"Message content for follow-up extraction: {content}")  # Debug
                     follow_ups = extract_follow_ups(content)
+                    print(f"Extracted follow-ups: {follow_ups}")  # Debug
                     if follow_ups:
                         response_data["follow_up_questions"].update(follow_ups)
 
@@ -903,7 +1011,7 @@ async def submit_query(
                 tables_html.append({
                     "table_name": table_name,
                     "table_html": html_table,
-                })          
+                })
             chat_insight = None
             if result["chosen_tables"]:
 
@@ -1085,8 +1193,8 @@ def upload_to_blob_storage(
                     blob_client = container_client.get_blob_client(blob_name)
 
                     print(f"Uploading {file_name} to {blob_name}...")
-                    blob_client.upload_blob(file_content, overwrite=True)        
-        
+                    blob_client.upload_blob(file_content, overwrite=True)
+
 @app.post("/upload")
 async def upload_files(
     request: Request,
@@ -1238,32 +1346,61 @@ async def upload_files(
 import json
 import re
 
+
+
 def extract_follow_ups(message_content):
-    """Extract follow-up questions from the message content."""
+    """Extract follow-up questions from the message content, including:
+    1. JSON-formatted follow-up questions
+    2. Related queries listed in the text"""
+
+    follow_ups = {}
+
     try:
+        # First try to extract JSON-formatted follow-ups (original logic)
         # Try to find JSON in code block first
-        json_match = re.search(r'```json\n({.*?})\n```', message_content, re.DOTALL)
+        json_match = re.search(r'json\n({.*?})\n', message_content, re.DOTALL)
         if json_match:
             data = json.loads(json_match.group(1))
-            return {
-                k: v for k, v in data.items() 
+            follow_ups.update({
+                k: v for k, v in data.items()
                 if k.startswith('follow_up_') and v and isinstance(v, str)
-            }
-        
+            })
+
         # If no code block, try parsing the whole content as JSON
         try:
             data = json.loads(message_content)
-            return {
+            follow_ups.update({
                 k: v for k, v in data.items()
                 if k.startswith('follow_up_') and v and isinstance(v, str)
-            }
+            })
         except json.JSONDecodeError:
-            return {}
-            
+            pass
+
+        # Now extract Related Queries from text
+        related_queries_section = re.search(
+            r'Related Queries:\s*(.*?)(?=\n\n|\Z)',
+            message_content,
+            re.DOTALL | re.IGNORECASE
+        )
+
+        if related_queries_section:
+            queries_text = related_queries_section.group(1)
+            # Extract numbered questions
+            numbered_questions = re.findall(
+                r'\d+\.\s*(.*?)(?=\n\d+\.|\n*\Z)',
+                queries_text,
+                re.DOTALL
+            )
+
+            # Add to follow_ups with follow_up_N keys
+            for i, question in enumerate(numbered_questions, 1):
+                key = f'follow_up_{i}'
+                follow_ups[key] = question.strip()
+
     except Exception as e:
         print(f"Error extracting follow-ups: {e}")
-        return {}
 
+    return follow_ups
 async def use_llamaparse(file_content, file_name):
     try:
         with open(file_name, "wb") as f:
@@ -1334,7 +1471,7 @@ async def show_documents(request: Request,
         logging.info(f"Documents retrieved successfully for collection: {collection_name}")
         return doc_list
 
-       
+
 
     except Exception as e:
         logging.error(f"Error showing documents: {e}")
@@ -1358,7 +1495,7 @@ async def delete_document(request: Request,
         # Initialize the collection
         collection = init_chroma_collection(db_path, collection_name)
         print("document to be deleted",doc_name)
-        
+
         if doc_name:
               def delete_from_blob_storage(connect_str: str, container_name: str, file_name: str,collection_name):
                     # Create a BlobServiceClient to interact with the Azure Blob Storage
@@ -1406,11 +1543,11 @@ async def delete_document(request: Request,
                         AZURE_CONTAINER_NAME,
                         doc_name,
                         collection_name )
-        
-      
-        
+
+
+
         if ids_to_delete:
-            
+
             # Attempt deletio
             collection.delete(ids=ids_to_delete)
 
@@ -1441,3 +1578,87 @@ async def delete_document(request: Request,
         logging.error(f"Error deleting document '{doc_name}': {e}")
         print(f"Error deleting document: {e}")  # Print exception for debugging
         return JSONResponse({"status": "error", "message": "Error deleting document."})
+
+
+# # Add this configuration near your other app configurations
+# UPLOAD_FOLDER = 'uploads'
+# if not os.path.exists(UPLOAD_FOLDER):
+#     os.makedirs(UPLOAD_FOLDER)
+
+# # Initialize Azure Form Recognizer client
+# endpoint = os.environ.get('endpoint')
+# key = os.environ.get('key')
+# document_analysis_client = DocumentAnalysisClient(
+#     endpoint=endpoint, credential=AzureKeyCredential(key)
+# )
+# # Add this route to your FastAPI app
+# @app.post("/process-document", response_class=HTMLResponse)
+# async def process_document(
+#     request: Request,
+#     service: str = Form(...),
+#     input_method: str = Form(...),
+#     file: UploadFile = File(None),
+#     bill_url: str = Form(None)
+# ):
+#     try:
+#         # Determine the poller method based on service
+#         if service == 'Invoices':
+#             poller_method = 'prebuilt-invoice'
+#         elif service == 'Receipts':
+#             poller_method = 'prebuilt-receipt'
+#         elif service == 'AWB':
+#             poller_method = 'finance_insight'
+#         elif service == 'Packing Slip':
+#             poller_method = 'packing_slip'
+#         elif service == 'COMPOSED':
+#             poller_method = 'composed_model'
+#         else:
+#             raise HTTPException(status_code=400, detail="Invalid service type")
+
+#         # Process based on input method
+#         if input_method == 'file' and file:
+#             filename = secure_filename(file.filename)
+#             file_path = os.path.join(UPLOAD_FOLDER, filename)
+
+#             # Save the file temporarily
+#             with open(file_path, "wb") as f:
+#                 f.write(await file.read())
+
+#             with open(file_path, "rb") as fh:
+#                 file_buf = BytesIO(fh.read())
+
+#             poller = document_analysis_client.begin_analyze_document(poller_method, file_buf)
+#             os.remove(file_path)  # Clean up the temporary file
+
+#         elif input_method == 'url' and bill_url:
+#             poller = document_analysis_client.begin_analyze_document_from_url(poller_method, bill_url)
+#         else:
+#             raise HTTPException(status_code=400, detail="Invalid input method or missing data")
+
+#         # Get results
+#         bill_data = poller.result()
+#         results = []
+
+#         # Process results based on document type
+#         if poller_method == 'prebuilt-invoice':
+#             results = invoice_data(results, bill_data)
+#         elif poller_method == 'prebuilt-receipt':
+#             results = reciept_data(results, bill_data)
+#         elif poller_method == 'finance_insight':
+#             results = awb_data(results, bill_data)
+#         elif poller_method == 'packing_slip':
+#             results = packing_data(results, bill_data)
+#         elif poller_method == 'composed_model':
+#             for idx, doc in enumerate(bill_data.documents):
+#                 doc_type = doc.doc_type
+#                 if doc_type == "composed_model:finance_insight":
+#                     results = awb_data(results, bill_data)
+#                 elif doc_type == "composed_model:packing_slip":
+#                     results = packing_data(results, bill_data)
+
+#         print("Results:", results)
+#         return JSONResponse(content=results)
+
+
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
