@@ -53,13 +53,13 @@ from io import BytesIO
 import os, csv
 import pandas as pd
 
-# Add these imports at the top of your FastAPI file
-from azure.core.credentials import AzureKeyCredential
-from azure.ai.formrecognizer import DocumentAnalysisClient
-from bill_datas import invoice_data, reciept_data, awb_data, packing_data
-import os
-from io import BytesIO
-from werkzeug.utils import secure_filename
+# # Add these imports at the top of your FastAPI file
+# from azure.core.credentials import AzureKeyCredential
+# from azure.ai.formrecognizer import DocumentAnalysisClient
+# from bill_datas import invoice_data, reciept_data, awb_data, packing_data
+# import os
+# from io import BytesIO
+# from werkzeug.utils import secure_filename
 
 
 from langchain.chains.openai_tools import create_extraction_chain_pydantic
@@ -466,6 +466,7 @@ async def clear_temp_docs():
 
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+
 @app.post("/add_to_faqs/")
 async def add_to_faqs(
     data: QueryInput,
