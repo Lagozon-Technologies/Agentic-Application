@@ -124,7 +124,7 @@ def bing_search(query: str) -> str:
     url = f'https://api.bing.microsoft.com/v7.0/search?q={query}'
     headers = {'Ocp-Apim-Subscription-Key': api_key}
     response = requests.get(url, headers=headers)
-    
+
     if response.status_code == 200:
         results = response.json()
         summaries = []
@@ -132,7 +132,7 @@ def bing_search(query: str) -> str:
             title = result.get('name', 'No Title')
             snippet = result.get('snippet', 'No summary available.')
             summaries.append(f"**{title}**: {snippet}")
-        
+
         return "\n\n".join(summaries) if summaries else "No results found."
     else:
         return f"Error: {response.status_code}"
@@ -154,7 +154,7 @@ memory = ConversationBufferMemory(memory_key="chat_history", return_messages=Tru
 # Initialize agent
 llm = ChatOpenAI(
     api_key=OPENAI_API_KEY,
-    model="gpt-4o-mini",  
+    model="gpt-4o-mini",
     temperature=0.5
 )
 
@@ -186,7 +186,7 @@ def researcher_node(state: GraphState) -> dict:
         ]
     }
 
-    
+
 def hybrid_retrieve(query, docstore, vector_index, bm25_retriever, alpha=0.5):
     """Perform hybrid retrieval using BM25 and vector-based retrieval."""
     # Get results from BM25
@@ -312,7 +312,7 @@ def intellidoc_tool(department: str, query_text: str):
 
     except Exception as e:
         logging.error(f"Error in intellidoc_tool: {e}")
-        return query_text, "Failed to process your request. Please try again from relevant tool", ""
+        return query_text, "Failed to process your request. Please try again from relevant tool", ""
 
 
 # Define the intellidoc node
@@ -337,6 +337,8 @@ def intellidoc_node(state: GraphState) -> dict:
             HumanMessage(content=formatted_content, name="intellidoc")
         ]
     }
+
+    
 # Define Node Functions
 def extract_tables(data: GraphState) -> dict:
     question = data['question']
@@ -425,7 +427,7 @@ def execute_sql(data: GraphState) -> dict:
     print("dataaaa:", data)
     selected_subject = data['selected_subject']
     SQL_Statement = data['SQL_Statement'].replace("SQL Query:", "").strip()
-    
+
     if selected_subject.startswith('Adv'):
         alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}')
     else:
@@ -450,7 +452,7 @@ def execute_sql(data: GraphState) -> dict:
 
     # Create the rephrasing chain
     llm = ChatOpenAI(model=data['selected_model'], temperature=0)
-    
+
     rephrase_answer = (
         RunnablePassthrough.assign(
             answer=lambda x: llm.invoke(
