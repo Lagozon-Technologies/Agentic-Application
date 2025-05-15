@@ -239,22 +239,24 @@ def intellidoc_tool(department: str, query_text: str):
     try:
         # Map the department to its index in the lists
         DEPARTMENT_TO_INDEX = {
-            # "human_resources": 0,
-            # "legal": 1,
-            # "finance": 2,
-            # "operations": 3,
-            # "healthcare": 4,
-            # "insurance": 5,
-            # "learning_and_development": 6,
-            # "others": 7
-            "Adv-Manufacturing":0,
-            "Adv-Inventory":1,
-            "Adv-HumanResources":2,
-            "Adv-Purchasing":3,
-            "Adv-Sales":4,
-            "Adv-Products":5,
-        }
+                "Adv-Manufacturing": 0,
+                "Adv-Inventory": 1,
+                "Adv-HumanResources": 2,
+                "Adv-Purchasing": 3,
+                "Adv-Sales": 4,
+                "Adv-Products": 5,
+                "HR": 6,
+                "Customer Support": 7,
+                "Healthcare": 8,
+                "Inventory": 9,
+                "Sales": 10,
+                "Finance": 11,
+                "Insurance": 12,
+                "Legal": 13
+            }
+
         department_index = DEPARTMENT_TO_INDEX.get(department)
+        
 
         if department_index is None:
             return query_text, "Invalid department selected.", ""
