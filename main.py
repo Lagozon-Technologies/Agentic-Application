@@ -1414,6 +1414,9 @@ def extract_follow_ups(message_content):
                 if clean_query:
                     key = f'follow_up_{i}'
                     follow_ups[key] = clean_query
+        # Limit to maximum 3 follow-ups
+        if len(follow_ups) > 3:
+            follow_ups = dict(list(follow_ups.items())[:3])           
 
     except Exception as e:
         print(f"Error extracting follow-ups: {e}")
