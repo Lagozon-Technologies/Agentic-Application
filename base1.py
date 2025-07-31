@@ -54,12 +54,12 @@ adv_db_schema_hr = os.getenv("adv_db_schema_hr")
 adv_db_schema_pe = os.getenv("adv_db_schema_pe")
 adv_db_schema_purchase = os.getenv("adv_db_schema_purchase")
 adv_db_schema_sales = os.getenv("adv_db_schema_sales")
-# user = os.getenv("user")
-# password = os.getenv("password")
-# host=os.getenv("host")
-# #db_warehouse=os.getenv("db_warehouse")
-# dbname=os.getenv("dbname")
-# port=os.getenv("port")
+user = os.getenv("user")
+password = os.getenv("password")
+host=os.getenv("host")
+#db_warehouse=os.getenv("db_warehouse")
+dbname=os.getenv("dbname")
+port=os.getenv("port")
 #table_details_prompt = os.getenv('TABLE_DETAILS_PROMPT')
 # Change if your schema is different
 DOCSTORE = os.getenv("DOCSTORE").split(",")
@@ -411,14 +411,14 @@ def generate_sql(data: GraphState)-> dict:
             print("DB Connection Done for Adventureworks----",db._schema)
 
     else:
-        db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}'
+        db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{dbname}'
                                 ,schema=schema
                                 ,include_tables= data['chosen_tables']
                                 , view_support=True
                                 ,sample_rows_in_table_info=1
                                 ,lazy_table_reflection=True
                                 )
-
+        print(user, password, host, port, dbname)
         print("DB Connection Done for PostGress---",db._schema)
         #for testing of synapse
 
@@ -441,7 +441,7 @@ def execute_sql(data: GraphState) -> dict:
     if selected_subject.startswith('Adv'):
         alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}')
     else:
-        alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
+        alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{dbname}')
 
     tables_data = {}
     for table in data['chosen_tables']:

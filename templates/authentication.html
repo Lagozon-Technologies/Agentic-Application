@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    
+
     <title>Modern Login Page | AsmrProg</title>
 </head>
 
@@ -136,7 +136,7 @@ body {
 
 .container.active .sign-in {
     transform: translateX(100%);
-   
+
 }
 
 .container select {
@@ -345,10 +345,10 @@ body {
                     <option value="adventureworks">AdventureWorks</option>
                     <option value="postgres">PostgreSQL</option>
                 </select>
-                <select name="section" id="section-dropdown" required> 
+                <select name="section" id="section-dropdown" required>
                     <option value="" disabled selected>Select Section</option>
                 </select>
-            
+
                 <button type="submit">Sign In</button>
             </form>
         </div>
@@ -374,11 +374,11 @@ body {
     const container = document.getElementById('container');
     const registerBtn = document.getElementById('register');
     const loginBtn = document.getElementById('login');
-    
+
     registerBtn.addEventListener('click', () => {
         container.classList.add("active");
     });
-    
+
     loginBtn.addEventListener('click', () => {
         container.classList.remove("active");
     });
@@ -388,10 +388,10 @@ body {
         const databaseDropdown = document.getElementById('database-dropdown');
         const sectionDropdown = document.getElementById('section-dropdown');
         const selectedDatabase = databaseDropdown.value;
-        
+
         // Clear existing options except the first one
         sectionDropdown.innerHTML = '<option value="" disabled selected>Select Section</option>';
-        
+
         if (selectedDatabase === 'adventureworks') {
             // Add AdventureWorks sections
             const adventureworksSections = [
@@ -402,7 +402,7 @@ body {
                 'Adv-Sales',
                 'Adv-Products'
             ];
-            
+
             adventureworksSections.forEach(section => {
                 const option = document.createElement('option');
                 option.value = section;
@@ -421,7 +421,7 @@ body {
                 'Legal',
                 'Sales'
             ];
-            
+
             postgresSections.forEach(section => {
                 const option = document.createElement('option');
                 option.value = section;
@@ -430,7 +430,7 @@ body {
             });
         }
     }
-    
+
     // Initialize the sections based on default selection (if any)
     document.addEventListener('DOMContentLoaded', function() {
         updateSections();
@@ -438,14 +438,14 @@ body {
     // Login form submission handler
     document.getElementById("signin-btn").addEventListener("click", async function (event) {
         event.preventDefault(); // Prevent default form submission
-    
+
         const form = document.querySelector('.sign-in form'); // Get form element
         const emailInput = document.querySelector('input[type="email"]').value.trim();
         const passwordInput = document.querySelector('input[type="password"]').value.trim();
         const nameInput = document.querySelector('input[type="text"]')?.value.trim(); // Optional if exists
         const sectionDropdown = document.querySelector('#section-dropdown').value;
         const databaseDropdown = document.querySelector('#database-dropdown').value;
-    
+
         // Validation
         if (!emailInput) {
             alert("Please enter your email before signing in!");
@@ -467,15 +467,15 @@ body {
             alert("Please select a section before signing in!");
             return;
         }
-    
+
         const formData = new FormData(form); // Create FormData object
-    
+
         try {
             const response = await fetch("/login", {
                 method: "POST",
                 body: formData
             });
-    
+
             if (response.redirected) {
                 // Keep the original redirect URL exactly as it was
                 window.location.href = `/user_more?name=${encodeURIComponent(nameInput)}&section=${encodeURIComponent(sectionDropdown)}`;
@@ -488,8 +488,8 @@ body {
             alert("Something went wrong. Please try again.");
         }
     });
-</script>  
-        
+</script>
+
 </body>
 
 </html>

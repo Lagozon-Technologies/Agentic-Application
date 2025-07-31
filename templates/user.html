@@ -9,305 +9,345 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0"
     />
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:wght@400;600;700&display=swap');
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:wght@400;600;700&display=swap");
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing: border-box;
-    font-family:"Poppins", serif;
-}
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", serif;
+      }
 
+      :root {
+        /* Light theme colors (default) */
+        --text-color: #333333;
+        --subheading-color: #555555;
+        --placeholder-color: #777777;
+        --primary-color: #ffffff;
+        --secondary-color: #f0f0f0;
+        --secondary-hover-color: #e0e0e0;
+        --scrollbar-color: #cccccc;
+        --table-border-color: rgba(0, 0, 0, 0.1);
+        --sidebar-width: 250px;
+        --sidebar-collapsed-width: 70px;
+      }
 
-:root {
-    /* Light theme colors (default) */
-    --text-color: #333333;
-    --subheading-color: #555555;
-    --placeholder-color: #777777;
-    --primary-color: #ffffff;
-    --secondary-color: #f0f0f0;
-    --secondary-hover-color: #e0e0e0;
-    --scrollbar-color: #cccccc;
-    --table-border-color: rgba(0, 0, 0, 0.1);
-    --sidebar-width: 250px;
-    --sidebar-collapsed-width: 70px;
-}
+      body {
+        color: var(--text-color);
+        background-color: var(--primary-color);
+        overflow-x: hidden;
+      }
 
+      .container {
+        padding: 32px 0 10px;
+        margin-left: var(--sidebar-width);
+        transition: margin-left 0.3s ease;
+      }
 
-body {
-    color: var(--text-color);
-    background-color: var(--primary-color);
-    overflow-x: hidden;
-}
+      .sidebar.collapsed ~ .container {
+        margin-left: var(--sidebar-collapsed-width);
+      }
 
-.container {
-    padding: 32px 0 10px;
-    margin-left: var(--sidebar-width);
-    transition: margin-left 0.3s ease;
-}
-
-.sidebar.collapsed ~ .container {
-    margin-left: var(--sidebar-collapsed-width);
-}
-
-.container :where(.app-header, .section-selector, .suggestions-container, .prompt-wrapper, .disclaimer-text, .chat-results){
-    margin: 0 auto;
-    width: 100%;
-    padding: 0 20px;
-    max-width: 800px;
-}
-/* .prompt-wrapper{
+      .container
+        :where(
+          .app-header,
+          .section-selector,
+          .suggestions-container,
+          .prompt-wrapper,
+          .disclaimer-text,
+          .chat-results
+        ) {
+        margin: 0 auto;
+        width: 100%;
+        padding: 0 20px;
+        max-width: 800px;
+      }
+      /* .prompt-wrapper{
   width: 100vw;
 } */
 
-/* App header styling*/
-.container .app-header{
+      /* App header styling*/
+      .container .app-header {
+        position: relative;
+        margin-bottom: 20px;
+      }
 
-    position: relative;
-    margin-bottom: 20px;
-}
+      .app-header .heading {
+        font-size: 2rem;
+        width: fit-content;
+        background: linear-gradient(to right, #1d7efd, #8f6fff);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
 
-.app-header .heading{
-    font-size: 2rem;
-    width: fit-content;
-    background: linear-gradient(to right, #1d7efd, #8f6fff);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
+      .app-header .sub-heading {
+        font-size: 1.5rem;
+        color: var(--subheading-color);
+        margin-top: -5px;
+      }
+      .container .suggestions-container {
+        margin-bottom: 20px;
+        padding: 0 20px;
+        max-width: 800px;
+        width: 100%;
+      }
+      /* Suggestions container stylings */
+      .suggestions {
+        display: flex;
+        gap: 15px;
+        list-style: none;
+        overflow-x: auto;
+        padding: 15px 0;
+        scrollbar-width: none;
+        scrollbar-color: var(--scrollbar-color) var(--primary-color);
+      }
 
-.app-header .sub-heading{
-    font-size: 1.5rem;
-    color: var(--subheading-color);
-    margin-top: -5px;
-}
-.container .suggestions-container {
-    margin-bottom: 20px;
-    padding: 0 20px;
-    max-width: 800px;
-    width: 100%;
-}
-/* Suggestions container stylings */
-.suggestions {
-    display: flex;
-    gap: 15px;
-    list-style: none;
-    overflow-x: auto;
-    padding: 15px 0;
-    scrollbar-width: none;
-    scrollbar-color: var(--scrollbar-color) var(--primary-color);
-}
+      .suggestions::-webkit-scrollbar {
+        height: 6px;
+      }
 
-.suggestions::-webkit-scrollbar {
-    height: 6px;
-}
+      .suggestions::-webkit-scrollbar-thumb {
+        background-color: var(--scrollbar-color);
+        border-radius: 3px;
+      }
 
-.suggestions::-webkit-scrollbar-thumb {
-    background-color: var(--scrollbar-color);
-    border-radius: 3px;
-}
+      .suggestions .suggestions-item {
+        width: 228px;
+        padding: 18px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-radius: 12px;
+        background: var(--secondary-color);
+        transition: 0.3s ease;
+      }
+      /* Prompt container stylings */
+      .prompt-container {
+        position: fixed;
+        bottom: 0;
+        left: var(--sidebar-width);
+        right: 0;
+        padding: 16px 0;
+        background: var(--primary-color);
+        z-index: 10;
+        transition: left 0.3s ease;
+      }
 
-.suggestions .suggestions-item {
-    width: 228px;
-    padding: 18px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    justify-content: space-between;
-    align-items: flex-end;
-    border-radius: 12px;
-    background: var(--secondary-color);
-    transition: 0.3s ease;
-}
-/* Prompt container stylings */
-.prompt-container {
-    position: fixed;
-    bottom: 0;
-    left: var(--sidebar-width);
-    right: 0;
-    padding: 16px 0;
-    background: var(--primary-color);
-    z-index: 10;
-    transition: left 0.3s ease;
-}
+      .sidebar.collapsed ~ .container .prompt-container {
+        left: var(--sidebar-collapsed-width);
+      }
 
-.sidebar.collapsed ~ .container .prompt-container {
-    left: var(--sidebar-collapsed-width);
-}
+      .prompt-container :where(.prompt-wrapper, .prompt-form, .prompt-actions) {
+        display: flex;
+        gap: 10px;
+        height: 45px;
+        align-items: center;
+      }
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .prompt-wrapper .prompt-form {
+        width: 100%;
+        height: 100%;
+        border-radius: 130px;
+        background: var(--secondary-color);
+      }
 
-.prompt-container :where(.prompt-wrapper, .prompt-form, .prompt-actions){
-    display: flex;
-    gap: 10px;
-    height: 45px;
-    align-items: center;
-}
+      .prompt-form .prompt-input {
+        height: 100%;
+        width: 100%;
+        background: none;
+        border: none;
+        outline: none;
+        color: var(--text-color);
+        padding-left: 20px;
+        font-size: 0.95rem;
+      }
 
-.prompt-wrapper .prompt-form {
-    width: 100%;
-    height: 100%;
-    border-radius: 130px;
-    background: var(--secondary-color);
-}
+      .prompt-form .prompt-input::placeholder {
+        color: var(--placeholder-color);
+      }
 
-.prompt-form .prompt-input {
-    height: 100%;
-    width: 100%;
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--text-color);
-    padding-left: 20px;
-    font-size: 0.95rem;
-}
+      .prompt-wrapper button {
+        width: 45px;
+        height: 45px;
+        border: none;
+        cursor: pointer;
+        border-radius: 50%;
+        font-size: 1.2rem;
+        color: var(--text-color);
+        background: var(--secondary-color);
+        transition: 0.3s ease;
+      }
 
-.prompt-form .prompt-input::placeholder {
-    color: var(--placeholder-color);
-}
+      .prompt-wrapper button:hover {
+        background: var(--secondary-hover-color);
+      }
 
-.prompt-wrapper button {
-    width: 45px;
-    height: 45px;
-    border: none;
-    cursor: pointer;
-    border-radius: 50%;
-    font-size: 1.2rem;
-    color: var(--text-color);
-    background: var(--secondary-color);
-    transition: 0.3s ease;
-}
+      .prompt-form .prompt-actions {
+        gap: 5px;
+        margin-right: 7px;
+      }
 
-.prompt-wrapper button:hover {
-    background: var(--secondary-hover-color);
-}
+      .prompt-form .prompt-actions button {
+        height: 45px;
+        width: 45px;
+      }
 
-.prompt-form .prompt-actions{
-    gap: 5px;
-    margin-right: 7px;
-}
+      .prompt-form #send-prompt-btn {
+        color: #fff;
+        background: #1d7efd;
+        display: none;
+      }
 
-.prompt-form .prompt-actions button {
-    height: 45px;
-    width: 45px;
-}
+      .prompt-form .prompt-input:valid ~ .prompt-actions #send-prompt-btn {
+        display: block;
+      }
 
-.prompt-form #send-prompt-btn {
-    color: #fff;
-    background: #1d7efd;
-    display: none;
-}
+      .prompt-form #send-prompt-btn:hover {
+        background: #0264e3;
+      }
 
-.prompt-form .prompt-input:valid ~ .prompt-actions #send-prompt-btn {
-    display: block;
-}
+      .prompt-container .disclaimer-text {
+        font-size: 0.75rem;
+        color: var(--placeholder-color);
+        margin-top: 8px;
+        text-align: center;
+      }
 
-.prompt-form #send-prompt-btn:hover {
-    background: #0264e3;
-}
+      /* Chat results styling */
+      .chat-results {
+        margin-top: 20px;
+        margin-bottom: 15vh;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        max-height: 55vh;
+        overflow-y: auto;
+        padding-right: 10px;
+        scrollbar-width: none;
+        width: 100%;
+      }
 
-.prompt-container .disclaimer-text {
-    font-size: 0.75rem;
-    color: var(--placeholder-color);
-    margin-top: 8px;
-    text-align: center;
-}
+      .chat-message {
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        word-wrap: break-word;
+      }
 
-/* Chat results styling */
-.chat-results {
-    margin-top: 20px;
-    margin-bottom: 15vh;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    max-height: 55vh;
-    overflow-y: auto;
-    padding-right: 10px;
-    scrollbar-width: none;
-    width: 100%;
-}
+      .user-message {
+        align-self: flex-end;
+        background: #1d7efd;
+        color: white;
+        max-width: 90%;
+      }
 
-.chat-message {
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    max-width: 90%;
-    word-wrap: break-word;
-}
+      .ai-message {
+        align-self: flex-start;
+        background: var(--secondary-color);
+        width: fit-content; /* Changed from 100% to fit-content */
+        /* max-width: 100%; */
+        min-width: 60%; /* Ensure it doesn't get too narrow */
+        display: inline-block; /* Changed from flex */
+        box-sizing: border-box;
 
-.user-message {
-    align-self: flex-end;
-    background: #1d7efd;
-    color: white;
-}
+        white-space: normal; /* Allow wrapping */
+        word-wrap: break-word; /* Break long words if needed */
+        overflow-wrap: break-word; /* Modern equivalent */
+      }
 
-.ai-message {
-    align-self: flex-start;
-    background: var(--secondary-color);
-    max-width: 100%; /* Allow full width */
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    /* white-space: pre-wrap; */
-    display: inline-block;
-}
+      .ai-message table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 8px 0;
+      }
 
-.ai-message pre {
-    white-space: pre-wrap; /* Preserve line breaks but allow wrapping */
-    word-break: break-all; /* Break long words if needed */
-    overflow-x: auto; /* Add horizontal scroll if needed */
-    max-width: 100%;
-    padding: 8px;
-    background: rgba(0,0,0,0.1);
-    border-radius: 4px;
-}
+      .ai-message table,
+      .ai-message th,
+      .ai-message td {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
 
-.user-message, .ai-message {
-    max-width: 90%;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-}
+      .ai-message th,
+      .ai-message td {
+        padding: 8px;
+        text-align: left;
+        white-space: normal; /* Prevent text wrapping in cells nowarp*/
+        word-wrap: break-word; /* Break long words if needed */
+      }
 
-/* Specifically for SQL queries */
-.ai-message {
-    white-space: pre-wrap;
-}
+      .ai-message pre {
+        white-space: pre-wrap;
+        word-break: break-word; /* Changed from break-all */
+        overflow-x: auto;
+        max-width: 100%;
+        padding: 8px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 4px;
+      }
 
+      /* Ensure the message container expands vertically */
+      .ai-message-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
 
-/* Loading indicator */
-.loading-indicator {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 20px 0;
-    width: 100%;
-}
+      /* Loading indicator */
+      .loading-indicator {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 20px 0;
+        width: 100%;
+      }
 
-.loading-indicator span {
-    width: 8px;
-    height: 8px;
-    margin: 0 5px;
-    background-color: var(--text-color);
-    border-radius: 50%;
-    animation: bounce 1.5s infinite ease-in-out;
-}
+      .loading-indicator span {
+        width: 8px;
+        height: 8px;
+        margin: 0 5px;
+        background-color: var(--text-color);
+        border-radius: 50%;
+        animation: bounce 1.5s infinite ease-in-out;
+      }
 
-.loading-indicator span:nth-child(2) {
-    animation-delay: 0.2s;
-}
+      .loading-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
 
-.loading-indicator span:nth-child(3) {
-    animation-delay: 0.4s;
-}
+      .loading-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
 
-@keyframes bounce {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-8px);
-    }
-}
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+      }
 
-/* Table styling
+      /* Table styling
 .result-table {
     width: 100%;
     border-collapse: collapse;
@@ -337,791 +377,925 @@ body {
     background-color: var(--secondary-hover-color);
 } */
 
-/* Table styling */
-.result-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 20px 0;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid var(--table-border-color, rgba(0, 0, 0, 0.1)); /* Default light mode border */
-}
+      /* Table styling */
+      .result-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--table-border-color, rgba(0, 0, 0, 0.1)); /* Default light mode border */
+      }
 
-.result-table th {
-    background-color: #1d7efd;
-    color: white;
-    padding: 12px;
-    text-align: left;
-    border-bottom: 2px solid var(--table-border-color, rgba(0, 0, 0, 0.15));
-}
+      .result-table th {
+        background-color: #1d7efd;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        border-bottom: 2px solid var(--table-border-color, rgba(0, 0, 0, 0.15));
+      }
 
-.result-table td {
-    padding: 10px;
-    border-bottom: 1px solid var(--table-border-color, rgba(0, 0, 0, 0.1));
-    border-right: 1px solid var(--table-border-color, rgba(0, 0, 0, 0.1));
-}
+      .result-table td {
+        padding: 10px;
+        border-bottom: 1px solid var(--table-border-color, rgba(0, 0, 0, 0.1));
+        border-right: 1px solid var(--table-border-color, rgba(0, 0, 0, 0.1));
+      }
 
+      .result-table td:last-child {
+        border-right: none; /* Remove right border from last column */
+      }
 
-.result-table td:last-child {
-    border-right: none; /* Remove right border from last column */
-}
+      .result-table tr:last-child td {
+        border-bottom: none; /* Remove bottom border from last row */
+      }
 
-.result-table tr:last-child td {
-    border-bottom: none; /* Remove bottom border from last row */
-}
+      .result-table tr:nth-child(even) {
+        background-color: var(--secondary-color);
+      }
 
-.result-table tr:nth-child(even) {
-    background-color: var(--secondary-color);
-}
+      .result-table tr:hover {
+        background-color: var(--secondary-hover-color);
+      }
 
-.result-table tr:hover {
-    background-color: var(--secondary-hover-color);
-}
+      /* Pagination controls */
+      .pagination-controls {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin: 10px 0;
+      }
 
-/* Pagination controls */
-.pagination-controls {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin: 10px 0;
-}
+      .pagination-controls button {
+        padding: 6px 10px;
+        background: var(--secondary-color);
+        border: none;
+        border-radius: 4px;
+        color: var(--text-color);
+        cursor: pointer;
+        transition: 0.3s ease;
+        font-size: 0.85rem;
+      }
 
-.pagination-controls button {
-    padding: 6px 10px;
-    background: var(--secondary-color);
-    border: none;
-    border-radius: 4px;
-    color: var(--text-color);
-    cursor: pointer;
-    transition: 0.3s ease;
-    font-size: 0.85rem;
-}
+      .pagination-controls button:hover {
+        background: var(--secondary-hover-color);
+      }
 
-.pagination-controls button:hover {
-    background: var(--secondary-hover-color);
-}
+      .pagination-controls button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
 
-.pagination-controls button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
+      .pagination-info {
+        margin: 0 10px;
+        align-self: center;
+        font-size: 0.85rem;
+      }
 
-.pagination-info {
-    margin: 0 10px;
-    align-self: center;
-    font-size: 0.85rem;
-}
+      /* Sidebar Styles */
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: var(--sidebar-width);
+        background: var(--secondary-color);
+        padding: 20px;
+        transition: width 0.3s ease;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        z-index: 1000;
+      }
 
-/* Sidebar Styles */
-.sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: var(--sidebar-width);
-    background: var(--secondary-color);
-    padding: 20px;
-    transition: width 0.3s ease;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    z-index: 1000;
-}
+      .new-chat-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-color);
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+        font-size: 0.95rem;
+      }
 
-.new-chat-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--text-color);
-    text-decoration: none;
-    padding: 8px 12px;
-    border-radius: 8px;
-    transition: background-color 0.3s ease;
-    font-size: 0.95rem;
-}
+      .new-chat-btn:hover {
+        background-color: var(--secondary-hover-color);
+      }
 
-.new-chat-btn:hover {
-    background-color: var(--secondary-hover-color);
-}
+      .nav-links {
+        list-style: none;
+        padding: 20px 0;
+        margin: 0;
+        flex-grow: 1;
+      }
 
-.nav-links {
-    list-style: none;
-    padding: 20px 0;
-    margin: 0;
-    flex-grow: 1;
-}
+      .nav-links li {
+        margin-bottom: 8px;
+      }
 
-.nav-links li {
-    margin-bottom: 8px;
-}
+      .nav-links li a {
+        pointer-events: auto;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        color: inherit;
+        font-size: 0.9rem;
+        padding: 8px 10px;
+      }
 
-.nav-links li a {
-    pointer-events: auto;
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    color: inherit;
-    font-size: 0.9rem;
-    padding: 8px 10px;
-}
+      .nav-links a:hover {
+        background-color: var(--secondary-hover-color);
+      }
 
-.nav-links a:hover {
-    background-color: var(--secondary-hover-color);
-}
+      .sidebar.collapsed {
+        width: var(--sidebar-collapsed-width);
+      }
 
-.sidebar.collapsed {
-    width: var(--sidebar-collapsed-width);
-}
+      .sidebar.collapsed .link-text {
+        display: none;
+      }
 
-.sidebar.collapsed .link-text {
-    display: none;
-}
+      .sidebar-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        border-bottom: 1px solid var(--secondary-hover-color);
+        cursor: pointer;
+      }
 
-.sidebar-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 15px;
-    border-bottom: 1px solid var(--secondary-hover-color);
-    cursor: pointer;
-}
+      .settings-link {
+        position: relative;
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        margin-top: auto;
+        color: var(--text-color);
+        text-decoration: none;
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+        font-size: 0.9rem;
+      }
 
-.settings-link {
-    position: relative;
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    margin-top: auto;
-    color: var(--text-color);
-    text-decoration: none;
-    border-radius: 8px;
-    transition: background-color 0.3s ease;
-    font-size: 0.9rem;
-}
+      .settings-link:hover {
+        background-color: var(--secondary-hover-color);
+      }
 
-.settings-link:hover {
-    background-color: var(--secondary-hover-color);
-}
+      .settings-link .material-symbols-rounded {
+        margin-right: 15px;
+      }
 
-.settings-link .material-symbols-rounded {
-    margin-right: 15px;
-}
+      #settings-options {
+        background: var(--secondary-color);
+        color: var(--text-color);
+        padding: 10px;
+        border-radius: 8px;
+        position: absolute;
+        width: 200px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        display: none;
+        z-index: 1000;
+        /* Remove bottom positioning */
+        top: auto; /* Reset top */
+        bottom: 100%; /* Position above the button */
+        left: 0;
+        transform: none; /* Remove any transforms */
+      }
 
-#settings-options {
-    background: var(--secondary-color);
-    color: var(--text-color);
-    padding: 10px;
-    border-radius: 8px;
-    position: absolute;
-    width: 200px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    display: none;
-    z-index: 1000;
-    /* Remove bottom positioning */
-    top: auto; /* Reset top */
-    bottom: 100%; /* Position above the button */
-    left: 0;
-    transform: none; /* Remove any transforms */
-}
+      #settings-options.show {
+        display: block;
+      }
 
-#settings-options.show {
-    display: block;
-}
+      #settings-options label {
+        display: block;
+        margin-bottom: 8px;
+        cursor: pointer;
+      }
 
-#settings-options label {
-    display: block;
-    margin-bottom: 8px;
-    cursor: pointer;
-}
+      .follow-up-container {
+        margin-top: 15px;
+        padding: 12px;
+        background: var(--secondary-color);
+        border-radius: 8px;
+        border-left: 3px solid #1d7efd;
+        font-size: 0.9rem;
+      }
 
-.follow-up-container {
-    margin-top: 15px;
-    padding: 12px;
-    background: var(--secondary-color);
-    border-radius: 8px;
-    border-left: 3px solid #1d7efd;
-    font-size: 0.9rem;
-}
+      .follow-up-container h3 {
+        color: var(--text-color);
+        margin-bottom: 8px;
+      }
 
-.follow-up-container h3 {
-    color: var(--text-color);
-    margin-bottom: 8px;
-}
+      .follow-up-questions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
 
-.follow-up-questions {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
+      .follow-up-question {
+        padding: 8px 10px;
+        background: var(--secondary-color);
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.85rem;
+      }
 
-.follow-up-question {
-    padding: 8px 10px;
-    background: var(--secondary-color);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 0.85rem;
-}
-
-.follow-up-question:hover {
-    background: var(--secondary-hover-color);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-/* Remove or update this existing rule */
-.back-button {
-    /* Remove these properties */
-    /* position: absolute;
+      .follow-up-question:hover {
+        background: var(--secondary-hover-color);
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+      /* Remove or update this existing rule */
+      .back-button {
+        /* Remove these properties */
+        /* position: absolute;
     top: 10px;
     right: 20px; */
-    /* Keep the rest */
-    text-decoration: none;
-    color: black;
-    font-weight: 500;
-    background-color: white;
-    padding: 5px 10px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: background-color 0.2s ease;
-    font-size: 0.85rem;
-}
+        /* Keep the rest */
+        text-decoration: none;
+        color: black;
+        font-weight: 500;
+        background-color: white;
+        padding: 5px 10px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: background-color 0.2s ease;
+        font-size: 0.85rem;
+      }
 
-.back-button:hover {
-    background-color: #f0f0f0;
-}
+      .back-button:hover {
+        background-color: #f0f0f0;
+      }
 
-/* Hide scrollbar but keep functionality */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
+      /* Hide scrollbar but keep functionality */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
 
-::-webkit-scrollbar-track {
-    background: var(--primary-color);
-}
+      ::-webkit-scrollbar-track {
+        background: var(--primary-color);
+      }
 
-::-webkit-scrollbar-thumb {
-    background: var(--scrollbar-color);
-    border-radius: 3px;
-}
+      ::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-color);
+        border-radius: 3px;
+      }
 
-/* Chart container styling */
-.chart-container {
-    width: 100%;
-    height: 400px;
-    margin: 20px 0;
-    border-radius: 8px;
-    background: var(--secondary-color);
-    padding: 15px;
-}
+      /* Chart container styling */
+      .chart-container {
+        width: 100%;
+        height: 400px;
+        margin: 20px 0;
+        border-radius: 8px;
+        background: var(--secondary-color);
+        padding: 15px;
+      }
 
-/* Chart controls styling */
-.chart-controls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-}
+      /* Chart controls styling */
+      .chart-controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
 
-.chart-controls select, .chart-controls button {
-    padding: 8px 12px;
-    background: var(--secondary-color);
-    border: 1px solid var(--secondary-hover-color);
-    border-radius: 4px;
-    color: var(--text-color);
-    cursor: pointer;
-}
+      .chart-controls select,
+      .chart-controls button {
+        padding: 8px 12px;
+        background: var(--secondary-color);
+        border: 1px solid var(--secondary-hover-color);
+        border-radius: 4px;
+        color: var(--text-color);
+        cursor: pointer;
+      }
 
-.chart-controls button {
-    background: #1d7efd;
-    border: none;
-    color:white;
-}
+      .chart-controls button {
+        background: #1d7efd;
+        border: none;
+        color: white;
+      }
 
-.chart-controls button:hover {
-    background: #0264e3;
-}
+      .chart-controls button:hover {
+        background: #0264e3;
+      }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
+      ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
 
-/* Download button styling */
-.download-btn {
-    padding: 8px 16px;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 10px;
-    display: inline-block;
-    transition: background-color 0.2s ease;
-}
+      /* Download button styling */
+      .download-btn {
+        padding: 8px 16px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+        display: inline-block;
+        transition: background-color 0.2s ease;
+      }
 
-.download-btn:hover {
-    background: #218838;
-}
-/* Overlay styles */
-.overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    z-index: 999;
-    display: none;
-}
+      .download-btn:hover {
+        background: #218838;
+      }
+      /* Overlay styles */
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        z-index: 999;
+        display: none;
+      }
 
-.overlay.hidden {
-    display: none;
-}
+      .overlay.hidden {
+        display: none;
+      }
 
-.overlay.visible {
-    display: block;
-}
+      .overlay.visible {
+        display: block;
+      }
 
-/* Visualization panel styles */
-.visualization-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80%;
-    max-width: 1000px;
-    height: 80vh;
-    background: var(--primary-color);
-    border-radius: 12px;
-    padding: 20px;
-    z-index: 1000;
-    display: none;
-    flex-direction: column;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-}
+      /* Visualization panel styles */
+      .visualization-panel {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+        max-width: 1000px;
+        height: 80vh;
+        background: var(--primary-color);
+        border-radius: 12px;
+        padding: 20px;
+        z-index: 1000;
+        display: none;
+        flex-direction: column;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      }
 
-.visualization-panel.visible {
-    display: flex;
-}
+      .visualization-panel.visible {
+        display: flex;
+      }
 
-.visualization-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--secondary-color);
-}
+      .visualization-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--secondary-color);
+      }
 
-.visualization-content {
-    flex-grow: 1;
-    overflow-y: auto;
-}
+      .visualization-content {
+        flex-grow: 1;
+        overflow-y: auto;
+      }
 
-.close-visualization {
-    background: none;
-    border: none;
-    color: var(--text-color);
-    cursor: pointer;
-    font-size: 1.5rem;
-}
+      .close-visualization {
+        background: none;
+        border: none;
+        color: var(--text-color);
+        cursor: pointer;
+        font-size: 1.5rem;
+      }
 
-/* Update sidebar button styles */
-.visualization-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--text-color);
-    text-decoration: none;
-    padding: 8px 12px;
-    border-radius: 8px;
-    transition: background-color 0.3s ease;
-    margin-top: 10px;
-}
+      /* Update sidebar button styles */
+      .visualization-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-color);
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition: background-color 0.3s ease;
+        margin-top: 10px;
+      }
 
-.visualization-btn:hover {
-    background-color: var(--secondary-hover-color);
-}
-.download-btn {
-    padding: 8px 16px;
-    background: #1d7efd;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
+      .visualization-btn:hover {
+        background-color: var(--secondary-hover-color);
+      }
+      .download-btn {
+        padding: 8px 16px;
+        background: #1d7efd;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
 
-.download-btn:hover {
-    background: #0264e3;
-}
+      .download-btn:hover {
+        background: #0264e3;
+      }
 
-/* Visualization button specific style */
-.download-btn[style*="6f42c1"] {
-    background: #6f42c1;
-}
+      /* Visualization button specific style */
+      .download-btn[style*="6f42c1"] {
+        background: #6f42c1;
+      }
 
-.download-btn[style*="6f42c1"]:hover {
-    background: #5a32a3;
-}
-/* Like/Dislike buttons */
-.feedback-buttons {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-    align-items: center;
-}
+      .download-btn[style*="6f42c1"]:hover {
+        background: #5a32a3;
+      }
+      /* Like/Dislike buttons */
+      .feedback-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        align-items: center;
+      }
 
-.feedback-btn {
-    background: transparent;
-    border: 1px solid var(--text-color);
-    color: var(--text-color);
-    padding: 4px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    display: inline-flex;
-    
-    justify-content: center;
-    gap: 6px;
-    font-size: 0.8rem;
-    transition: all 0.3s ease;
-    line-height: 1.2;
-    height: 28px;
-    min-width: 80px;
-}
+      .feedback-btn {
+        background: transparent;
+        border: 1px solid var(--text-color);
+        color: var(--text-color);
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: inline-flex;
 
-.feedback-btn .material-symbols-rounded {
-    font-size: 1rem;
-}
+        justify-content: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        transition: all 0.3s ease;
+        line-height: 1.2;
+        height: 28px;
+        min-width: 80px;
+      }
 
-.feedback-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
+      .feedback-btn .material-symbols-rounded {
+        font-size: 1rem;
+      }
 
-.feedback-btn.liked {
-    border-color: #4CAF50;
-    color: #4CAF50;
-    background: rgba(76, 175, 80, 0.1);
-}
+      .feedback-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
 
-.feedback-btn.disliked {
-    border-color: #F44336;
-    color: #F44336;
-    background: rgba(244, 67, 54, 0.1);
-}
+      .feedback-btn.liked {
+        border-color: #4caf50;
+        color: #4caf50;
+        background: rgba(76, 175, 80, 0.1);
+      }
 
-.sql-query {
-    font-family: monospace;
-    background: rgba(0,0,0,0.1);
-    padding: 8px;
-    border-radius: 4px;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-/* Add this to your CSS */
-.header-buttons {
-    position: absolute;
-    top: 10px;
-    right: 20px;
-    display: flex;
-    gap: 10px;
-}
+      .feedback-btn.disliked {
+        border-color: #f44336;
+        color: #f44336;
+        background: rgba(244, 67, 54, 0.1);
+      }
 
-.back-button, .logout-button {
-    text-decoration: none;
-    color: black;
-    font-weight: 500;
-    background-color: white;
-    padding: 5px 10px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: background-color 0.2s ease;
-    font-size: 0.85rem;
-}
+      .sql-query {
+        font-family: monospace;
+        background: rgba(0, 0, 0, 0.1);
+        padding: 8px;
+        border-radius: 4px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      /* Add this to your CSS */
+      .header-buttons {
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        display: flex;
+        gap: 10px;
+      }
 
-.back-button:hover, .logout-button:hover {
-    background-color: #f0f0f0;
-}
+      .back-button,
+      .logout-button {
+        text-decoration: none;
+        color: black;
+        font-weight: 500;
+        background-color: white;
+        padding: 5px 10px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: background-color 0.2s ease;
+        font-size: 0.85rem;
+      }
 
-.logout-button {
-    background-color: #ff4444;
-    color: white;
-}
+      .back-button:hover,
+      .logout-button:hover {
+        background-color: #f0f0f0;
+      }
 
-.logout-button:hover {
-    background-color: #cc0000;
-    color: white;
-}
+      .logout-button {
+        background-color: #ff4444;
+        color: white;
+      }
 
-/* NEW SIDEBAR ACTION BUTTONS STYLES */
-.sidebar-actions {
-    margin: 20px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
+      .logout-button:hover {
+        background-color: #cc0000;
+        color: white;
+      }
 
-.action-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 15px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-color);
-    text-decoration: none;
-    transition: all 0.3s ease;
-    font-size: 0.9rem;
-    border: none;
-    cursor: pointer;
-    width: 100%;
-    text-align: left;
-}
+      /* NEW SIDEBAR ACTION BUTTONS STYLES */
+      .sidebar-actions {
+        margin: 20px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
 
-.action-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    transform: translateX(3px);
-}
+      .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 15px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-color);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+      }
 
-.action-btn .material-symbols-rounded {
-    font-size: 1.2rem;
-}
+      .action-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateX(3px);
+      }
 
-.action-btn.schedule {
-    color: #8f6fff;
-}
+      .action-btn .material-symbols-rounded {
+        font-size: 1.2rem;
+      }
 
-.action-btn.email {
-    color: #1d7efd;
-}
+      .action-btn.schedule {
+        color: #8f6fff;
+      }
 
-.action-btn.faq {
-    color: #28a745;
-}
+      .action-btn.email {
+        color: #1d7efd;
+      }
 
-/* MODAL STYLES FOR BUTTON ACTIONS */
-.action-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1001;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-}
+      .action-btn.faq {
+        color: #28a745;
+      }
 
-.action-modal.active {
-    opacity: 1;
-    visibility: visible;
-}
+      /* MODAL STYLES FOR BUTTON ACTIONS */
+      .action-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1001;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
 
-.modal-content {
-    background: var(--primary-color);
-    padding: 25px;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    position: relative;
-}
+      .action-modal.active {
+        opacity: 1;
+        visibility: visible;
+      }
+      .action-btn.faq {
+        color: #28a745;
+      }
+      .modal-content {
+        background: var(--primary-color);
+        padding: 25px;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
 
-.modal-close {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    color: var(--text-color);
-    font-size: 1.5rem;
-    cursor: pointer;
-}
+      .modal-close {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: var(--text-color);
+        font-size: 1.5rem;
+        cursor: pointer;
+      }
 
-.modal-title {
-    margin-bottom: 20px;
-    font-size: 1.5rem;
-    color: var(--text-color);
-}
+      .modal-title {
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+        color: var(--text-color);
+      }
 
-.modal-body {
-    margin-bottom: 20px;
-}
+      .modal-body {
+        margin-bottom: 20px;
+      }
 
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-}
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
 
-.modal-btn {
-    padding: 8px 16px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s ease;
-}
+      .modal-btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+      }
 
-.modal-btn-primary {
-    background: #1d7efd;
-    color: white;
-}
+      .modal-btn-primary {
+        background: #1d7efd;
+        color: white;
+      }
 
-.modal-btn-primary:hover {
-    background: #0264e3;
-}
+      .modal-btn-primary:hover {
+        background: #0264e3;
+      }
 
-.modal-btn-secondary {
-    background: var(--secondary-color);
-    color: var(--text-color);
-}
+      .modal-btn-secondary {
+        background: var(--secondary-color);
+        color: var(--text-color);
+      }
 
-.modal-btn-secondary:hover {
-    background: var(--secondary-hover-color);
-}
+      .modal-btn-secondary:hover {
+        background: var(--secondary-hover-color);
+      }
     </style>
   </head>
   <body>
     <nav class="sidebar">
-        <div class="sidebar-header">
-            <span class="material-symbols-rounded">menu</span>
-        </div>
-        <a href="#" class="new-chat-btn" id="new-chat-btn">
-            <span class="material-symbols-rounded">Edit</span>
-            <span class="link-text">New Chat</span>
-        </a>
-          <!-- NEW ACTION BUTTONS ADDED HERE -->
-          <div class="sidebar-actions">
-            <button class="action-btn schedule">
-                <span class="material-symbols-rounded">calendar_today</span>
-                <span class="link-text">Schedule</span>
-            </button>
-            <button class="action-btn email">
-                <span class="material-symbols-rounded">email</span>
-                <span class="link-text">Email</span>
-            </button>
-        </div>
+      <div class="sidebar-header">
+        <span class="material-symbols-rounded">menu</span>
+      </div>
+      <a href="#" class="new-chat-btn" id="new-chat-btn">
+        <span class="material-symbols-rounded">Edit</span>
+        <span class="link-text">New Chat</span>
+      </a>
+      <!-- NEW ACTION BUTTONS ADDED HERE -->
+      <div class="sidebar-actions">
+        <button class="action-btn schedule">
+          <span class="material-symbols-rounded">calendar_today</span>
+          <span class="link-text">Schedule</span>
+        </button>
+        <button class="action-btn email">
+          <span class="material-symbols-rounded">email</span>
+          <span class="link-text">Email</span>
+        </button>
+        <button class="action-btn faq" id="documind-btn">
+          <span class="material-symbols-rounded">description</span>
+          <span class="link-text">Documind</span>
+        </button>
+      </div>
 
-        <a href="#" class="settings-link" id="settings-link">
-            <span class="material-symbols-rounded">settings</span>
-            <span class="link-text">Settings</span>
-        </a>
+      <a href="#" class="settings-link" id="settings-link">
+        <span class="material-symbols-rounded">settings</span>
+        <span class="link-text">Settings</span>
+      </a>
 
-        <div id="settings-options">
-            <label><input type="checkbox" name="settings-option" id="option-intellidoc" value="intellidoc"> Document agent</label><br>
-            <label><input type="checkbox" name="settings-option" id="option-db-query" value="db_query">Database agent </label><br>
-            <label><input type="checkbox" name="settings-option" id="option-researcher" value="researcher"> Web agent</label><br>
-            <label><input type="checkbox" id="option-all" value="all"> All</label>
-        </div>
+      <div id="settings-options">
+        <label
+          ><input
+            type="checkbox"
+            name="settings-option"
+            id="option-intellidoc"
+            value="intellidoc"
+          />
+          Document agent</label
+        ><br />
+        <label
+          ><input
+            type="checkbox"
+            name="settings-option"
+            id="option-db-query"
+            value="db_query"
+          />Database agent </label
+        ><br />
+        <label
+          ><input
+            type="checkbox"
+            name="settings-option"
+            id="option-researcher"
+            value="researcher"
+          />
+          Web agent</label
+        ><br />
+        <label><input type="checkbox" id="option-all" value="all" /> All</label>
+      </div>
     </nav>
 
     <div class="container">
-        <!-- App Header -->
-        <header class="app-header">
-            <div class="header-buttons">
-                <a href="javascript:history.back()" class="back-button" title="Go Back">
-                    <span class="material-symbols-rounded">arrow_back</span> Back
-                </a>
-                <a href="/logout" class="logout-button" title="Logout">
-                    <span class="material-symbols-rounded">logout</span> Logout
-                </a>
-            </div>
-            <h1 class="heading" id="greeting">Hello, there</h1>
-            <h2 class="sub-heading">How Can I help you?</h2>
-        </header>
-        <!-- Suggestion Container -->
-        <div class="suggestions-container">
-            <ul class="suggestions" id="suggestions-list"></ul>
+      <!-- App Header -->
+      <header class="app-header">
+        <div class="header-buttons">
+          <a
+            href="javascript:history.back()"
+            class="back-button"
+            title="Go Back"
+          >
+            <span class="material-symbols-rounded">arrow_back</span> Back
+          </a>
+          <a href="/logout" class="logout-button" title="Logout">
+            <span class="material-symbols-rounded">logout</span> Logout
+          </a>
         </div>
-        <!-- Suggestion Container -->
-        <!-- <ul class="suggestions" id="suggestions-list"></ul> -->
+        <h1 class="heading" id="greeting">Hello, there</h1>
+        <h2 class="sub-heading">How Can I help you?</h2>
+      </header>
+      <!-- Suggestion Container -->
+      <div class="suggestions-container">
+        <ul class="suggestions" id="suggestions-list"></ul>
+      </div>
+      <!-- Suggestion Container -->
+      <!-- <ul class="suggestions" id="suggestions-list"></ul> -->
 
-        <!-- Chat Results Container -->
-        <div class="chat-results" id="chat-results"></div>
+      <!-- Chat Results Container -->
+      <div class="chat-results" id="chat-results"></div>
 
-        <!-- Prompt Container -->
-        <div class="prompt-container">
-            <div class="prompt-wrapper">
-                <form action="/submit" class="prompt-form" id="prompt-form">
-                    <input
-                        type="text"
-                        name="user_query"
-                        class="prompt-input"
-                        id="prompt-input"
-                        placeholder="Ask me anything..."
-                        required
-                    />
-                    <div class="prompt-actions">
-                        <button id="record-audio-btn" type="button" class="material-symbols-rounded" title="Record Audio">
-                            mic
-                        </button>
-                        <button id="add-file-btn" type="button" class="material-symbols-rounded" title="Attach file">
-                            attach_file
-                        </button>
-                        <button id="send-prompt-btn" class="material-symbols-rounded" title="Send">
-                            arrow_upward
-                        </button>
-                    </div>
-                </form>
-
-                <button id="theme-toggler-btn" class="material-symbols-rounded" title="Toggle theme">
-                    light_mode
-                </button>
+      <!-- Prompt Container -->
+      <div class="prompt-container">
+        <div class="prompt-wrapper">
+          <form action="/submit" class="prompt-form" id="prompt-form">
+            <input
+              type="text"
+              name="user_query"
+              class="prompt-input"
+              id="prompt-input"
+              placeholder="Ask me anything..."
+              required
+            />
+            <div class="prompt-actions">
+              <button
+                id="record-audio-btn"
+                type="button"
+                class="material-symbols-rounded"
+                title="Record Audio"
+              >
+                mic
+              </button>
+              <button
+                id="add-file-btn"
+                type="button"
+                class="material-symbols-rounded"
+                title="Attach file"
+              >
+                attach_file
+              </button>
+              <button
+                id="send-prompt-btn"
+                class="material-symbols-rounded"
+                title="Send"
+              >
+                arrow_upward
+              </button>
             </div>
-            <p class="disclaimer-text">XO can make mistakes, so double-check it</p>
+          </form>
+
+          <button
+            id="theme-toggler-btn"
+            class="material-symbols-rounded"
+            title="Toggle theme"
+          >
+            light_mode
+          </button>
         </div>
+        <p class="disclaimer-text">XO can make mistakes, so double-check it</p>
+      </div>
     </div>
-    
+
     <!-- NEW MODALS FOR ACTION BUTTONS -->
     <div class="action-modal" id="schedule-modal">
-        <div class="modal-content">
-            <button class="modal-close">&times;</button>
-            <h3 class="modal-title">Schedule Content</h3>
-            <div class="modal-body" id="schedule-modal-body">
-                <!-- Content will be inserted here -->
-            </div>
-            <div class="modal-actions">
-                <button class="modal-btn modal-btn-secondary modal-close">Cancel</button>
-                <button class="modal-btn modal-btn-primary" id="confirm-schedule">Schedule</button>
-            </div>
+      <div class="modal-content">
+        <button class="modal-close">&times;</button>
+        <h3 class="modal-title">Schedule Content</h3>
+        <div class="modal-body" id="schedule-modal-body">
+          <!-- Content will be inserted here -->
         </div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-secondary modal-close">
+            Cancel
+          </button>
+          <button class="modal-btn modal-btn-primary" id="confirm-schedule">
+            Schedule
+          </button>
+        </div>
+      </div>
     </div>
+    <dialog class="action-modal" id="documind-modal">
+      <div class="modal-content">
+        <button
+          class="modal-close"
+          onclick="document.getElementById('documind-modal').classList.remove('active');"
+        >
+          &times;
+        </button>
+        <h3 class="modal-title">Process Document</h3>
+        <div class="modal-body">
+          <form id="document-form">
+            <div class="form-group">
+              <label for="document-service">Document Type:</label>
+              <select id="document-service" class="form-control" required>
+                <option value="">Select document type</option>
+                <option value="Invoices">Renuka Sugar Invoice</option>
+                <option value="Renuka POC">Invoice</option>
+                <option value="Receipts">Receipt</option>
+                <option value="AWB">AWB</option>
+                <option value="Packing Slip">Packing Slip</option>
+                <option value="COMPOSED">Composed</option>
+              </select>
+            </div>
 
+            <div class="form-group">
+              <label>Input Method:</label>
+              <div class="radio-group">
+                <label>
+                  <input
+                    type="radio"
+                    name="input-method"
+                    value="file"
+                    checked
+                  />
+                  Upload File
+                </label>
+                <label>
+                  <input type="radio" name="input-method" value="url" />
+                  URL
+                </label>
+              </div>
+            </div>
+
+            <div id="file-input-group" class="form-group">
+              <label for="document-file">Upload Document:</label>
+              <input
+                type="file"
+                id="document-file"
+                class="form-control"
+                accept=".pdf,.jpg,.jpeg,.png"
+                multiple
+              />
+            </div>
+
+            <div id="url-input-group" class="form-group" style="display: none">
+              <label for="document-url">Document URL:</label>
+              <input
+                type="url"
+                id="document-url"
+                class="form-control"
+                placeholder="https://example.com/document.pdf"
+              />
+            </div>
+
+            <div class="modal-actions">
+              <button
+                id="process-button"
+                type="submit"
+                class="modal-btn modal-btn-primary"
+              >
+                Process
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </dialog>
     <div class="action-modal" id="email-modal">
-        <div class="modal-content">
-            <button class="modal-close">&times;</button>
-            <h3 class="modal-title">Email Content</h3>
-            <div class="modal-body" id="email-modal-body">
-                <!-- Content will be inserted here -->
-            </div>
-            <div class="modal-actions">
-                <button class="modal-btn modal-btn-secondary modal-close">Cancel</button>
-                <button class="modal-btn modal-btn-primary" id="confirm-email">Send Email</button>
-            </div>
+      <div class="modal-content">
+        <button class="modal-close">&times;</button>
+        <h3 class="modal-title">Email Content</h3>
+        <div class="modal-body" id="email-modal-body">
+          <!-- Content will be inserted here -->
         </div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-secondary modal-close">
+            Cancel
+          </button>
+          <button class="modal-btn modal-btn-primary" id="confirm-email">
+            Send Email
+          </button>
+        </div>
+      </div>
     </div>
-
-
 
     <script>
-
-    document.addEventListener("DOMContentLoaded", function () {
+      document.addEventListener("DOMContentLoaded", function () {
         // ✅ DOM Elements
         const sidebar = document.querySelector(".sidebar");
         const sidebarHeader = document.querySelector(".sidebar-header");
@@ -1135,103 +1309,492 @@ body {
         const themeTogglerBtn = document.getElementById("theme-toggler-btn");
         const deleteChatsBtn = document.getElementById("new-chat-btn");
         const recordAudioBtn = document.getElementById("record-audio-btn");
-        const toolCheckboxes = document.querySelectorAll('input[name="settings-option"]');        // File Upload Functionality
+        const toolCheckboxes = document.querySelectorAll(
+          'input[name="settings-option"]'
+        ); // File Upload Functionality
+        const allResults = [];
+
         const addFileBtn = document.getElementById("add-file-btn");
         const fileInput = document.createElement("input");
         fileInput.type = "file";
         fileInput.multiple = true;
         fileInput.style.display = "none";
         let hasUploadedDocuments = false;
+        // Add this to your existing JavaScript code
 
+        // Documind button click handler
+        document
+          .getElementById("documind-btn")
+          ?.addEventListener("click", function (e) {
+            e.preventDefault();
+            document.getElementById("documind-modal").classList.add("active");
+          });
+        function processShowLoadingIndicator() {
+          document.getElementById("process-button").innerHTML =
+            "<div class='spinner'></div>";
+        }
+
+        function processRemoveLoadingIndicator() {
+          document.getElementById("process-button").innerHTML = "Process";
+        }
+        // Input method toggle
+        document
+          .querySelectorAll('input[name="input-method"]')
+          .forEach((radio) => {
+            radio.addEventListener("change", function () {
+              const fileGroup = document.getElementById("file-input-group");
+              const urlGroup = document.getElementById("url-input-group");
+
+              if (this.value === "file") {
+                fileGroup.style.display = "block";
+                urlGroup.style.display = "none";
+              } else {
+                fileGroup.style.display = "none";
+                urlGroup.style.display = "block";
+              }
+            });
+          });
+        document
+          .getElementById("document-form")
+          ?.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const service = document.getElementById("document-service").value;
+            const inputMethod = document.querySelector(
+              'input[name="input-method"]:checked'
+            ).value;
+            const fileInput = document.getElementById("document-file");
+            const urlInput = document.getElementById("document-url");
+
+            if (!service) {
+              alert("Please select a document type");
+              return;
+            }
+
+            const formData = new FormData();
+            formData.append("service", service);
+            formData.append("input_method", inputMethod);
+
+            if (inputMethod === "file") {
+              if (fileInput.files.length === 0) {
+                alert("Please select at least one file");
+                return;
+              }
+
+              // Append all files (note the parameter name is 'files')
+              for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append("files", fileInput.files[i]);
+              }
+            } else if (inputMethod === "url") {
+              if (!urlInput.value) {
+                alert("Please enter a valid URL");
+                return;
+              }
+              formData.append("bill_url", urlInput.value);
+            }
+
+            try {
+              processShowLoadingIndicator();
+              const response = await fetch("/process-document", {
+                method: "POST",
+                body: formData,
+              });
+
+              if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(
+                  errorData.detail || `HTTP error! status: ${response.status}`
+                );
+              }
+
+              const data = await response.json();
+              displayDocumentResults(data);
+
+              document
+                .getElementById("documind-modal")
+                .classList.remove("active");
+            } catch (error) {
+              console.error("Document processing error:", error);
+              addMessageToChat(
+                "ai",
+                `Error processing document: ${error.message}`
+              );
+            } finally {
+              processRemoveLoadingIndicator();
+            }
+          });
+        function displayDocumentResults(data) {
+          if (!data || data.length === 0) {
+            addMessageToChat("ai", "No data extracted from document.");
+            return;
+          }
+
+          // Collect all possible field names from all documents (excluding tables)
+          const allFields = new Set();
+          data.forEach((document) => {
+            if (document.results && document.results.length > 0) {
+              Object.keys(document.results[0]).forEach((field) => {
+                if (field !== "tables" && field !== "List Items") {
+                  allFields.add(field);
+                }
+              });
+            }
+          });
+
+          const fieldNames = Array.from(allFields);
+
+          // Start building the main table
+          let tableHtml = "<h3>Document Processing Results</h3>";
+          tableHtml += '<table class="result-table"><thead><tr>';
+
+          // Add filename as first column
+          tableHtml += "<th>Filename</th>";
+
+          // Add headers for each field
+          fieldNames.forEach((field) => {
+            tableHtml += `<th>${field}</th>`;
+          });
+
+          tableHtml += "</tr></thead><tbody>";
+
+          // Add rows for each document
+          data.forEach((document) => {
+            const { filename, results } = document;
+            tableHtml += "<tr>";
+
+            // Add filename cell
+            tableHtml += `<td>${filename}</td>`;
+
+            // Add cells for each field
+            if (results && results.length > 0) {
+              const result = results[0];
+
+              // Process tables into items array before adding to allResults
+              if (result.tables && result.tables.length > 0) {
+                result.items = [];
+                result.tables.forEach((table) => {
+                  // Convert table cells to items
+                  const items = convertTableToItems(table.cells);
+                  result.items.push(...items);
+                });
+              }
+              // delete result.tables; // Remove the tables field
+              console.log("Processed result:", result); // Log the processed result
+              const { tables, ...resultWithoutTables } = result;
+              allResults.push(resultWithoutTables); // Add to allResults array
+              // allResults.push(result); // Add to allResults array
+              console.log("Processed after result:", resultWithoutTables); // Log the processed result
+
+
+              fieldNames.forEach((field) => {
+                const cellValue =
+                  field === "Description"
+                    ? (result[field] || "").replace(/\n/g, "<br>")
+                    : result[field] || "";
+                tableHtml += `<td>${cellValue}</td>`;
+              });
+            } else {
+              // Empty cells if no results
+              fieldNames.forEach(() => {
+                tableHtml += "<td></td>";
+              });
+            }
+
+            tableHtml += "</tr>";
+          });
+
+          tableHtml += "</tbody></table>";
+
+          // Add to chat
+          addMessageToChat("ai", tableHtml);
+
+          // Process and display tables for each document
+          data.forEach((document) => {
+            if (document.results && document.results.length > 0) {
+              const result = document.results[0];
+
+              // Display tables if present
+              if (result.tables && result.tables.length > 0) {
+                result.tables.forEach((table) => {
+                  displayTableData(
+                    `Invoice Items`,
+                    table.cells,
+                    document.filename
+                  );
+                });
+              }
+            }
+          });
+
+          // Helper function to convert table cells to items array
+          function convertTableToItems(cells) {
+            const items = [];
+
+            // Find max rows and columns
+            let maxRow = 0;
+            let maxCol = 0;
+            cells.forEach((cell) => {
+              if (cell.row_index > maxRow) maxRow = cell.row_index;
+              if (cell.column_index > maxCol) maxCol = cell.column_index;
+            });
+
+            // Create 2D array for the table
+            const tableGrid = Array(maxRow + 1)
+              .fill()
+              .map(() => Array(maxCol + 1).fill(""));
+
+            cells.forEach((cell) => {
+              tableGrid[cell.row_index][cell.column_index] = cell.content;
+            });
+
+            // Skip header row (row 0) and process data rows
+            for (let rowIndex = 1; rowIndex <= maxRow; rowIndex++) {
+              const row = tableGrid[rowIndex];
+              // Skip empty rows or summary rows (like Total, SGST, etc.)
+              if (row.some((cell) => cell && cell.trim() !== "")) {
+                const item = {
+                  description: row[1] || "", // Assuming description is in column 1
+                  qty: row[2] || "", // Assuming quantity is in column 2
+                  weight: row[3] || "", // Assuming weight is in column 3
+                  rate: row[4] || "", // Assuming rate is in column 4
+                  amount: row[5] || "", // Assuming amount is in column 5
+                };
+
+                // Only add if it's not a summary row
+                if (
+                  !["total", "sgst", "cgst", "cost", "gst"].some((term) =>
+                    item.description.toLowerCase().includes(term)
+                  )
+                ) {
+                  items.push(item);
+                }
+              }
+            }
+
+            return items;
+          }
+
+          // Helper function to display table data
+          function displayTableData(tableName, cells, filename) {
+            let tableHtml = `<h4>${tableName} (${filename})</h4>`;
+
+            // Find max rows and columns
+            let maxRow = 0;
+            let maxCol = 0;
+            cells.forEach((cell) => {
+              if (cell.row_index > maxRow) maxRow = cell.row_index;
+              if (cell.column_index > maxCol) maxCol = cell.column_index;
+            });
+
+            // Create 2D array for the table
+            const tableGrid = Array(maxRow + 1)
+              .fill()
+              .map(() => Array(maxCol + 1).fill(""));
+            cells.forEach((cell) => {
+              tableGrid[cell.row_index][cell.column_index] = cell.content;
+            });
+
+            tableHtml += '<table class="result-table"><tbody>';
+            tableGrid.forEach((row, rowIndex) => {
+              tableHtml += "<tr>";
+              row.forEach((cell, colIndex) => {
+                // Style header row differently
+                const cellTag = rowIndex === 0 ? "th" : "td";
+                tableHtml += `<${cellTag}>${cell}</${cellTag}>`;
+              });
+              tableHtml += "</tr>";
+            });
+            tableHtml += "</tbody></table>";
+
+            addMessageToChat("ai", tableHtml);
+          }
+
+          // addMessageToChat('ai', `<div style="background:none; padding:0;"><h3>Document Processing Results</h3>${tableHtml}</div>`);
+          // Add Insert/download button
+          const downloadBtn = document.createElement("button");
+          downloadBtn.className = "download-btn";
+          downloadBtn.innerHTML =
+            '<span class="material-symbols-rounded">download</span> Insert Results';
+          // downloadBtn.addEventListener('click', () => downloadDocumentResults(results));
+
+          // const insertBtn = document.createElement('button');
+          // insertBtn.className = 'insert-btn';
+          // insertBtn.innerHTML = '<span class="material-symbols-rounded">publish</span> Insert Results';
+          downloadBtn.addEventListener("click", async () => {
+            try {
+              console.log(
+                "Payload being sent:",
+                JSON.stringify(allResults, null, 2)
+              ); // Add this line
+
+              const insertResponse = await fetch(
+                `${API_BASE_URL}/insert_invoices`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+
+                  body: JSON.stringify(allResults),
+                }
+              );
+
+              const responseData = await insertResponse.json();
+              if (insertResponse.ok) {
+                alert(responseData.message || "Data inserted successfully!");
+              } else {
+                console.error("Backend error:", responseData); // Add this
+
+                alert(`Error: ${responseData.detail}`);
+              }
+            } catch (error) {
+              alert("Insert failed: " + error.message);
+            }
+          });
+          // Append download button to the last AI message
+
+          const lastMessage = document.querySelector(
+            "#chat-results .ai-message:last-child"
+          );
+
+          if (lastMessage) {
+            lastMessage.appendChild(document.createElement("br"));
+            lastMessage.appendChild(downloadBtn);
+          }
+        }
+
+        function downloadDocumentResults(results) {
+          if (!results || results.length === 0) return;
+
+          try {
+            // Convert to CSV
+            const headers = Object.keys(results[0]);
+            let csv = headers.join(",") + "\n";
+
+            results.forEach((item) => {
+              const row = headers
+                .map((header) => {
+                  const value = item[header] || "";
+                  return `"${value.toString().replace(/"/g, '""')}"`;
+                })
+                .join(",");
+              csv += row + "\n";
+            });
+
+            // Create download link
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "document_results.csv";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          } catch (error) {
+            console.error("Error downloading results:", error);
+            alert("Failed to download results");
+          }
+        }
         // Add file input to DOM
         document.body.appendChild(fileInput);
 
         // File upload event listener
         addFileBtn.addEventListener("click", () => {
-            fileInput.click();
+          fileInput.click();
         });
 
-       // Modify the file upload event listener to track document state
-          fileInput.addEventListener("change", async (e) => {
-    if (fileInput.files.length === 0) return;
+        // Modify the file upload event listener to track document state
+        fileInput.addEventListener("change", async (e) => {
+          if (fileInput.files.length === 0) return;
 
-    try {
-        showLoadingIndicator();
-        const formData = new FormData();
-        for (let i = 0; i < fileInput.files.length; i++) {
-            formData.append("files", fileInput.files[i]);
-        }
-        formData.append("parser_choice", "LlamaParse");
-
-        const uploadResponse = await fetch(`${API_BASE_URL}/upload-temp-docs`, {
-            method: "POST",
-            body: formData
-        });
-
-        if (!uploadResponse.ok) throw new Error(`Upload failed: ${uploadResponse.statusText}`);
-
-        const uploadResult = await uploadResponse.json();
-        hasUploadedDocuments = true; // Set flag when documents are uploaded
-
-        addMessageToChat("ai", `Successfully uploaded ${fileInput.files.length} file(s). You can now ask questions about these documents.`);
-
-
-        // Add a button to clear uploaded files
-                const clearFilesBtn = document.createElement("button");
-                clearFilesBtn.className = "feedback-btn";
-                clearFilesBtn.innerHTML = `<span class="material-symbols-rounded">delete</span> Clear Uploaded Files`;
-                clearFilesBtn.style.marginTop = "10px";
-                clearFilesBtn.style.display = "inline-flex";
-                clearFilesBtn.style.alignItems = "center";
-                clearFilesBtn.style.gap = "6px";
-
-                // Clear documents handler should also update the flag
-                clearFilesBtn.addEventListener("click", async () => {
-                    try {
-                        const clearResponse = await fetch(`${API_BASE_URL}/clear-temp-docs`, {
-                            method: "POST"
-                        });
-                        if (!clearResponse.ok) throw new Error("Failed to clear files");
-
-                        hasUploadedDocuments = false; // Reset flag when documents are cleared
-                        addMessageToChat("ai", "Uploaded files have been cleared.");
-                        clearFilesBtn.remove();
-                    } catch (error) {
-                        console.error("Error clearing files:", error);
-                        addMessageToChat("ai", `Error clearing files: ${error.message}`);
-                    }
-                });
-                // Append the clear button to the chat
-                const lastMessage = chatResults.lastElementChild;
-                if (lastMessage) {
-                    lastMessage.appendChild(clearFilesBtn);
-                }
-
-            } catch (error) {
-                console.error("File upload error:", error);
-                addMessageToChat("ai", `File upload failed: ${error.message}`);
-            } finally {
-                removeLoadingIndicator();
-                fileInput.value = ""; // Reset file input
+          try {
+            showLoadingIndicator();
+            const formData = new FormData();
+            for (let i = 0; i < fileInput.files.length; i++) {
+              formData.append("files", fileInput.files[i]);
             }
-        });  
+            formData.append("parser_choice", "LlamaParse");
 
-        
-        allCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                toolCheckboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-            }
-        });
-        
-        // When any individual tool is selected, deselect "All"
-        toolCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                if (this.checked) {
-                    allCheckbox.checked = false;
-                }
+            const uploadResponse = await fetch(
+              `${API_BASE_URL}/upload-temp-docs`,
+              {
+                method: "POST",
+                body: formData,
+              }
+            );
+
+            if (!uploadResponse.ok)
+              throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+
+            const uploadResult = await uploadResponse.json();
+            hasUploadedDocuments = true; // Set flag when documents are uploaded
+
+            addMessageToChat(
+              "ai",
+              `Successfully uploaded ${fileInput.files.length} file(s). You can now ask questions about these documents.`
+            );
+
+            // Add a button to clear uploaded files
+            const clearFilesBtn = document.createElement("button");
+            clearFilesBtn.className = "feedback-btn";
+            clearFilesBtn.innerHTML = `<span class="material-symbols-rounded">delete</span> Clear Uploaded Files`;
+            clearFilesBtn.style.marginTop = "10px";
+            clearFilesBtn.style.display = "inline-flex";
+            clearFilesBtn.style.alignItems = "center";
+            clearFilesBtn.style.gap = "6px";
+
+            // Clear documents handler should also update the flag
+            clearFilesBtn.addEventListener("click", async () => {
+              try {
+                const clearResponse = await fetch(
+                  `${API_BASE_URL}/clear-temp-docs`,
+                  {
+                    method: "POST",
+                  }
+                );
+                if (!clearResponse.ok) throw new Error("Failed to clear files");
+
+                hasUploadedDocuments = false; // Reset flag when documents are cleared
+                addMessageToChat("ai", "Uploaded files have been cleared.");
+                clearFilesBtn.remove();
+              } catch (error) {
+                console.error("Error clearing files:", error);
+                addMessageToChat(
+                  "ai",
+                  `Error clearing files: ${error.message}`
+                );
+              }
             });
+            // Append the clear button to the chat
+            const lastMessage = chatResults.lastElementChild;
+            if (lastMessage) {
+              lastMessage.appendChild(clearFilesBtn);
+            }
+          } catch (error) {
+            console.error("File upload error:", error);
+            addMessageToChat("ai", `File upload failed: ${error.message}`);
+          } finally {
+            removeLoadingIndicator();
+            fileInput.value = ""; // Reset file input
+          }
+        });
+
+        allCheckbox.addEventListener("change", function () {
+          if (this.checked) {
+            toolCheckboxes.forEach((checkbox) => {
+              checkbox.checked = false;
+            });
+          }
+        });
+
+        // When any individual tool is selected, deselect "All"
+        toolCheckboxes.forEach((checkbox) => {
+          checkbox.addEventListener("change", function () {
+            if (this.checked) {
+              allCheckbox.checked = false;
+            }
+          });
         });
 
         // Create overlay and visualization panel elements
@@ -1239,878 +1802,1018 @@ body {
         overlay.id = "overlay";
         overlay.className = "overlay hidden";
         document.body.appendChild(overlay);
-        
+
         const visualizationPanel = document.createElement("div");
         visualizationPanel.className = "visualization-panel";
         document.body.appendChild(visualizationPanel);
-    
+
         // ✅ Constants
         //const API_BASE_URL = "http://127.0.0.1:8000";
-          const API_BASE_URL = "https://lz-agenticapplication-ggc6g4a5a0ckhkgm.centralindia-01.azurewebsites.net";
-        //const API_BASE_URL = "https://alameda-demo-sandbox-esaxc5epgae0cueg.centralindia-01.azurewebsites.net";
+        //   const API_BASE_URL = "https://lz-agenticapplication-ggc6g4a5a0ckhkgm.centralindia-01.azurewebsites.net";
+        const API_BASE_URL = "https://lz-renukasugarpoc-f0fvbrhzcmdsghce.centralindia-01.azurewebsites.net";
 
-    
         let isSubmitting = false;
         let mediaRecorder = null;
         let audioChunks = [];
         let isRecording = false;
         let currentTables = []; // Store table data for visualization panel
-        
+
         // ✅ Initialize App
         const urlParams = new URLSearchParams(window.location.search);
         const userName = urlParams.get("name");
         const userSection = urlParams.get("section");
-    
+
         function setupEventListeners() {
-            deleteChatsBtn.addEventListener("click", function () {
-                chatResults.innerHTML = "";
-                currentTables = [];
-            });
+          deleteChatsBtn.addEventListener("click", function () {
+            chatResults.innerHTML = "";
+            currentTables = [];
+          });
         }
-    
+
         document.getElementById("option-all").checked = true;
-    
+
         // Set greeting
         if (userName) {
-            document.getElementById("greeting").textContent = `Hello, ${userName}`;
+          document.getElementById(
+            "greeting"
+          ).textContent = `Hello, ${userName}`;
         }
-    
+
         // ✅ Event Listeners
         // Sidebar Toggle
         if (sidebar && sidebarHeader) {
-            sidebarHeader.addEventListener("click", () => sidebar.classList.toggle("collapsed"));
+          sidebarHeader.addEventListener("click", () =>
+            sidebar.classList.toggle("collapsed")
+          );
         }
-    
-        
+
         // Settings Dropdown
 
         // Settings Dropdown
-if (settingsLink && settingsOptions) {
-    settingsLink.addEventListener("click", function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Calculate position relative to the settings link
-        const linkRect = this.getBoundingClientRect();
-        
-        if (settingsOptions.style.display === "block") {
-            settingsOptions.style.display = "none";
-        } else {
-            // Position above the settings link
-            settingsOptions.style.display = "block";
-            settingsOptions.style.bottom = `${window.innerHeight - linkRect.top + 10}px`;
-            settingsOptions.style.left = `${linkRect.left}px`;
-        }
-    });
+        if (settingsLink && settingsOptions) {
+          settingsLink.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
 
-    document.addEventListener("click", (e) => {
-        if (!settingsLink.contains(e.target) && !settingsOptions.contains(e.target)) {
-            settingsOptions.style.display = "none";
+            // Calculate position relative to the settings link
+            const linkRect = this.getBoundingClientRect();
+
+            if (settingsOptions.style.display === "block") {
+              settingsOptions.style.display = "none";
+            } else {
+              // Position above the settings link
+              settingsOptions.style.display = "block";
+              settingsOptions.style.bottom = `${
+                window.innerHeight - linkRect.top + 10
+              }px`;
+              settingsOptions.style.left = `${linkRect.left}px`;
+            }
+          });
+
+          document.addEventListener("click", (e) => {
+            if (
+              !settingsLink.contains(e.target) &&
+              !settingsOptions.contains(e.target)
+            ) {
+              settingsOptions.style.display = "none";
+            }
+          });
         }
-    });
-}
-        
+
         // Theme Toggler
         themeTogglerBtn.addEventListener("click", toggleTheme);
         // Audio Recording
         recordAudioBtn.addEventListener("click", toggleAudioRecording);
-    
+
         // Form Submission
         promptForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            if (!isSubmitting && promptInput.value.trim()) {
-                await submitQuery(promptInput.value.trim());
-            }
+          e.preventDefault();
+          if (!isSubmitting && promptInput.value.trim()) {
+            await submitQuery(promptInput.value.trim());
+          }
         });
-    
-        // ✅ Core Functions
-async function fetchQuestions(section) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/get_questions?subject=${section}`);
-        const data = await response.json();
-        displaySuggestions(data);  // Pass the entire response object
-    } catch (error) {
-        console.error("Fetch questions error:", error);
-        displaySuggestions([]);  // Fallback to empty array
-    }
-}
-    
-       function displaySuggestions(responseData) {
-    suggestionsList.innerHTML = "";
-    
-    // Extract questions from response (handles both array and object responses)
-    const questions = Array.isArray(responseData) ? 
-        responseData : 
-        (responseData.questions || []);
-    
-    const colors = [
-        "#1d7efd", "#28a745", "#ffc107", "#6f42c1", "#e91e63",
-        "#17a2b8", "#fd7e14", "#20c997", "#6610f2", "#d63384",
-        "#1d7efd", "#28a745", "#ffc107", "#6f42c1", "#e91e63",
-        "#17a2b8", "#fd7e14", "#20c997", "#6610f2", "#d63384"
-    ];
-    
-    const icons = [
-        'draw', 'lightbulb', 'explore', 'list', 'gesture',
-        'rocket_launch', 'psychology', 'auto_awesome', 'hub', 'insights',
-        'palette', 'science', 'calculate', 'code', 'school',
-        'work', 'favorite', 'star', 'public', 'bolt'
-    ];
 
-    questions.slice(0, 20).forEach((question, index) => {
-        const li = document.createElement("li");
-        li.className = "suggestions-item";
-        li.innerHTML = `
+        // ✅ Core Functions
+        async function fetchQuestions(section) {
+          try {
+            const response = await fetch(
+              `${API_BASE_URL}/get_questions?subject=${section}`
+            );
+            const data = await response.json();
+            displaySuggestions(data); // Pass the entire response object
+          } catch (error) {
+            console.error("Fetch questions error:", error);
+            displaySuggestions([]); // Fallback to empty array
+          }
+        }
+
+        function displaySuggestions(responseData) {
+          suggestionsList.innerHTML = "";
+
+          // Extract questions from response (handles both array and object responses)
+          const questions = Array.isArray(responseData)
+            ? responseData
+            : responseData.questions || [];
+
+          const colors = [
+            "#1d7efd",
+            "#28a745",
+            "#ffc107",
+            "#6f42c1",
+            "#e91e63",
+            "#17a2b8",
+            "#fd7e14",
+            "#20c997",
+            "#6610f2",
+            "#d63384",
+            "#1d7efd",
+            "#28a745",
+            "#ffc107",
+            "#6f42c1",
+            "#e91e63",
+            "#17a2b8",
+            "#fd7e14",
+            "#20c997",
+            "#6610f2",
+            "#d63384",
+          ];
+
+          const icons = [
+            "draw",
+            "lightbulb",
+            "explore",
+            "list",
+            "gesture",
+            "rocket_launch",
+            "psychology",
+            "auto_awesome",
+            "hub",
+            "insights",
+            "palette",
+            "science",
+            "calculate",
+            "code",
+            "school",
+            "work",
+            "favorite",
+            "star",
+            "public",
+            "bolt",
+          ];
+
+          questions.slice(0, 20).forEach((question, index) => {
+            const li = document.createElement("li");
+            li.className = "suggestions-item";
+            li.innerHTML = `
             <p class="text">${question}</p>
             <span class="material-symbols-rounded" style="color: ${colors[index]}">
                 ${icons[index]}
             </span>`;
 
-        li.addEventListener("click", () => {
-            promptInput.value = question;
-            promptInput.focus();
-        });
-        
-        suggestionsList.appendChild(li);
-    });
-}
-        async function submitQuery(query) {
-            isSubmitting = true;
-            addMessageToChat("user", query);
-    
-            promptInput.value = "";
-            currentTables = [];
-            const visualizationContent = document.getElementById("visualization-content");
-            if (visualizationContent) visualizationContent.innerHTML = "";
-    
-            visualizationPanel.classList.remove("visible");
-            overlay.classList.remove("visible");
-    
-            showLoadingIndicator();
-    
-            try {  // Only try document query if we know documents are uploaded
-                if (hasUploadedDocuments) {
-                    try {
-                        const docQueryResponse = await fetch(`${API_BASE_URL}/query-temp-docs`, {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/x-www-form-urlencoded",
-                            },
-                            body: `question=${encodeURIComponent(query)}`
-                        });
-        
-                        if (docQueryResponse.ok) {
-                            const docQueryResult = await docQueryResponse.json();
-        
-                            // Check for explicit "no answer" indicator from backend
-                            if (docQueryResult.response !== undefined) {
-                                if (docQueryResult.response.trim() !== "") {
-                                    // Valid answer from documents
-                                    let formattedResponse = docQueryResult.response;
-        
-                            // 1. Replace **text** with <b>text</b>
-                            formattedResponse = formattedResponse.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-        
-                            // 2. Replace "- " with "• " for bullet points
-                            formattedResponse = formattedResponse.replace(/^- /gm, '• ');
-                            addMessageToChat("ai", formattedResponse);
-        
-        
-                                    // addMessageToChat("ai", docQueryResult.response);
-                                    if (docQueryResult.follow_up_questions) {
-                                        addFollowUpQuestions(docQueryResult.follow_up_questions);
-                                    }
-                                    return;
-                                } else {
-                                    // Documents exist but no answer found
-                                    addMessageToChat("ai", "I couldn't find an answer in the uploaded documents.");
-                                    return; // Don't proceed to regular query
-                                }
-                            }
-                            } else if (docQueryResponse.status === 404) {
-                            // Documents were cleared or expired
-                            hasUploadedDocuments = false;
-                            addMessageToChat("ai", "Uploaded documents are no longer available.");
-                        }
-                    } catch (error) {
-                        console.error("Document query error:", error);
-                        // Continue to regular query on error
-                    }
-                }
-        
-                // Proceed with regular query if:
-                // - No documents uploaded
-                // - Document query failed
-                // - No answer found in documents
+            li.addEventListener("click", () => {
+              promptInput.value = question;
+              promptInput.focus();
+            });
 
-                const formData = new FormData();
-                formData.append("section", userSection);
-                formData.append("user_query", query);
-                formData.append("example_question", "");
-    
-                const tools = [];
-                if (allCheckbox.checked) {
-                    tools.push("all");
-                } else {
-                    document.querySelectorAll('input[name="settings-option"]:checked').forEach(option => {
-                        tools.push(option.value);
-                    });
-                }
-    
-                tools.forEach(tool => formData.append("tool_selected", tool));
-    
-                const response = await fetch(`${API_BASE_URL}/submit`, {
-                    method: "POST",
-                    body: formData,
-                    headers: { "Accept": "application/json" }
-                });
-    
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
-                const data = await response.json();
-                processResponse(data);
-            } catch (error) {
-                console.error("Submission error:", error);
-                displayErrorMessage("Failed to process your request. Please try again.");
-            } finally {
-                removeLoadingIndicator();
-                isSubmitting = false;
-            }
+            suggestionsList.appendChild(li);
+          });
         }
-                // async function submitQuery(query) {
-                //     isSubmitting = true;
-                //     addMessageToChat("user", query);
-        
-                //     promptInput.value = "";
-                //     currentTables = [];
-                //     const visualizationContent = document.getElementById("visualization-content");
-                //     if (visualizationContent) visualizationContent.innerHTML = "";
-        
-                //     visualizationPanel.classList.remove("visible");
-                //     overlay.classList.remove("visible");
-        
-                //     showLoadingIndicator();
-        
-                //     try {
-                //         const formData = new FormData();
-                //         formData.append("section", userSection);
-                //         formData.append("user_query", query);
-                //         formData.append("example_question", "");
-        
-                //         const tools = [];
-                //         if (allCheckbox.checked) {
-                //             tools.push("all");
-                //         } else {
-                //             document.querySelectorAll('input[name="settings-option"]:checked').forEach(option => {
-                //                 tools.push(option.value);
-                //             });
-                //         }
-        
-                //         tools.forEach(tool => formData.append("tool_selected", tool));
-        
-                //         const response = await fetch(`${API_BASE_URL}/submit`, {
-                //             method: "POST",
-                //             body: formData,
-                //             headers: { "Accept": "application/json" }
-                //         });
-        
-                //         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
-                //         const data = await response.json();
-                //         processResponse(data);
-                //     } catch (error) {
-                //         console.error("Submission error:", error);
-                //         displayErrorMessage("Failed to process your request. Please try again.");
-                //     } finally {
-                //         removeLoadingIndicator();
-                //         isSubmitting = false;
-                //         promptInput.value = "";
-                //     }
-                // }
-        
-    
-        async function toggleAudioRecording() {
-            if (!mediaRecorder) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-    
-                    mediaRecorder.ondataavailable = event => {
-                        audioChunks.push(event.data);
-                    };
-    
-                    mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        await transcribeAudio(audioBlob);
-                        recordAudioBtn.classList.remove("recording");
-                    };
-    
-                    mediaRecorder.start();
-                    recordAudioBtn.classList.add("recording");
-                } catch (error) {
-                    console.error("Error accessing microphone:", error);
-                    alert("Could not access microphone. Please check permissions.");
+        async function submitQuery(query) {
+          isSubmitting = true;
+          addMessageToChat("user", query);
+
+          promptInput.value = "";
+          currentTables = [];
+          const visualizationContent = document.getElementById(
+            "visualization-content"
+          );
+          if (visualizationContent) visualizationContent.innerHTML = "";
+
+          visualizationPanel.classList.remove("visible");
+          overlay.classList.remove("visible");
+
+          showLoadingIndicator();
+
+          try {
+            // Only try document query if we know documents are uploaded
+            if (hasUploadedDocuments) {
+              try {
+                const docQueryResponse = await fetch(
+                  `${API_BASE_URL}/query-temp-docs`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    body: `question=${encodeURIComponent(query)}`,
+                  }
+                );
+
+                if (docQueryResponse.ok) {
+                  const docQueryResult = await docQueryResponse.json();
+
+                  // Check for explicit "no answer" indicator from backend
+                  if (docQueryResult.response !== undefined) {
+                    if (docQueryResult.response.trim() !== "") {
+                      // Valid answer from documents
+                      let formattedResponse = docQueryResult.response;
+
+                      // 1. Replace **text** with <b>text</b>
+                      formattedResponse = formattedResponse.replace(
+                        /\*\*(.*?)\*\*/g,
+                        "<b>$1</b>"
+                      );
+
+                      // 2. Replace "- " with "• " for bullet points
+                      formattedResponse = formattedResponse.replace(
+                        /^- /gm,
+                        "• "
+                      );
+                      addMessageToChat("ai", formattedResponse);
+
+                      // addMessageToChat("ai", docQueryResult.response);
+                      if (docQueryResult.follow_up_questions) {
+                        addFollowUpQuestions(
+                          docQueryResult.follow_up_questions
+                        );
+                      }
+                      return;
+                    } else {
+                      // Documents exist but no answer found
+                      addMessageToChat(
+                        "ai",
+                        "I couldn't find an answer in the uploaded documents."
+                      );
+                      return; // Don't proceed to regular query
+                    }
+                  }
+                } else if (docQueryResponse.status === 404) {
+                  // Documents were cleared or expired
+                  hasUploadedDocuments = false;
+                  addMessageToChat(
+                    "ai",
+                    "Uploaded documents are no longer available."
+                  );
                 }
+              } catch (error) {
+                console.error("Document query error:", error);
+                // Continue to regular query on error
+              }
+            }
+
+            // Proceed with regular query if:
+            // - No documents uploaded
+            // - Document query failed
+            // - No answer found in documents
+
+            const formData = new FormData();
+            formData.append("section", userSection);
+            formData.append("user_query", query);
+            formData.append("example_question", "");
+
+            const tools = [];
+            if (allCheckbox.checked) {
+              tools.push("all");
             } else {
-                mediaRecorder.stop();
-                mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                mediaRecorder = null;
+              document
+                .querySelectorAll('input[name="settings-option"]:checked')
+                .forEach((option) => {
+                  tools.push(option.value);
+                });
             }
+
+            tools.forEach((tool) => formData.append("tool_selected", tool));
+
+            const response = await fetch(`${API_BASE_URL}/submit`, {
+              method: "POST",
+              body: formData,
+              headers: { Accept: "application/json" },
+            });
+
+            if (!response.ok)
+              throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            processResponse(data);
+          } catch (error) {
+            console.error("Submission error:", error);
+            displayErrorMessage(
+              "Failed to process your request. Please try again."
+            );
+          } finally {
+            removeLoadingIndicator();
+            isSubmitting = false;
+          }
         }
-    
-        async function transcribeAudio(audioBlob) {
-            showLoadingIndicator();
-    
+        // async function submitQuery(query) {
+        //     isSubmitting = true;
+        //     addMessageToChat("user", query);
+
+        //     promptInput.value = "";
+        //     currentTables = [];
+        //     const visualizationContent = document.getElementById("visualization-content");
+        //     if (visualizationContent) visualizationContent.innerHTML = "";
+
+        //     visualizationPanel.classList.remove("visible");
+        //     overlay.classList.remove("visible");
+
+        //     showLoadingIndicator();
+
+        //     try {
+        //         const formData = new FormData();
+        //         formData.append("section", userSection);
+        //         formData.append("user_query", query);
+        //         formData.append("example_question", "");
+
+        //         const tools = [];
+        //         if (allCheckbox.checked) {
+        //             tools.push("all");
+        //         } else {
+        //             document.querySelectorAll('input[name="settings-option"]:checked').forEach(option => {
+        //                 tools.push(option.value);
+        //             });
+        //         }
+
+        //         tools.forEach(tool => formData.append("tool_selected", tool));
+
+        //         const response = await fetch(`${API_BASE_URL}/submit`, {
+        //             method: "POST",
+        //             body: formData,
+        //             headers: { "Accept": "application/json" }
+        //         });
+
+        //         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        //         const data = await response.json();
+        //         processResponse(data);
+        //     } catch (error) {
+        //         console.error("Submission error:", error);
+        //         displayErrorMessage("Failed to process your request. Please try again.");
+        //     } finally {
+        //         removeLoadingIndicator();
+        //         isSubmitting = false;
+        //         promptInput.value = "";
+        //     }
+        // }
+
+        async function toggleAudioRecording() {
+          if (!mediaRecorder) {
             try {
-                const formData = new FormData();
-                formData.append("file", audioBlob, "recording.webm");
-    
-                const response = await fetch(`${API_BASE_URL}/transcribe-audio/`, {
-                    method: "POST",
-                    body: formData
-                });
-    
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    
-                const data = await response.json();
-                promptInput.value = data.transcription;
-                removeLoadingIndicator();
+              const stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+              });
+              mediaRecorder = new MediaRecorder(stream);
+              audioChunks = [];
+
+              mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+              };
+
+              mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+                await transcribeAudio(audioBlob);
+                recordAudioBtn.classList.remove("recording");
+              };
+
+              mediaRecorder.start();
+              recordAudioBtn.classList.add("recording");
             } catch (error) {
-                console.error("Transcription error:", error);
-                displayErrorMessage("Failed to transcribe audio. Please try again.");
-            } finally {
-                removeLoadingIndicator();
-                audioChunks = [];
+              console.error("Error accessing microphone:", error);
+              alert("Could not access microphone. Please check permissions.");
             }
+          } else {
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+            mediaRecorder = null;
+          }
         }
-    
+
+        async function transcribeAudio(audioBlob) {
+          showLoadingIndicator();
+
+          try {
+            const formData = new FormData();
+            formData.append("file", audioBlob, "recording.webm");
+
+            const response = await fetch(`${API_BASE_URL}/transcribe-audio/`, {
+              method: "POST",
+              body: formData,
+            });
+
+            if (!response.ok)
+              throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            promptInput.value = data.transcription;
+            removeLoadingIndicator();
+          } catch (error) {
+            console.error("Transcription error:", error);
+            displayErrorMessage(
+              "Failed to transcribe audio. Please try again."
+            );
+          } finally {
+            removeLoadingIndicator();
+            audioChunks = [];
+          }
+        }
+
         function formatLLMResponse(data) {
-            const container = document.createElement("div");
-            container.classList.add("search-result");
-    
-            data = data.replace(/^Search Results\s*/, "");
-    
-            const sourceMatch = data.match(/Source\s*:\s*([\s\S]*?)(Related Quer(y|ies):|$)/s);
-            const relatedQueryMatch = data.match(/Related Quer(y|ies):\s*([\s\S]*?)(Source:|$)/s);
-    
-            let responseText = data.split(/Related Quer(y|ies):|Source:/)[0].trim();
-            let sourceText = sourceMatch ? sourceMatch[1].trim() : "";
-            let relatedQueriesText = relatedQueryMatch ? relatedQueryMatch[2].trim() : "";
-    
-            responseText = responseText.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-    
-            if (responseText) {
-                const responseDiv = document.createElement("div");
-                responseDiv.classList.add("response-section");
-                responseDiv.innerHTML = `<p>${responseText.replace(/\n/g, "<br>")}</p>`;
-                container.appendChild(responseDiv);
-            }
-    
-            if (sourceText) {
-                const sourceDiv = document.createElement("div");
-                sourceDiv.classList.add("source-section");
-                sourceDiv.innerHTML = `<h3><strong>Source</strong></h3><p>${sourceText.replace(/\n/g, "<br>")}</p>`;
-                container.appendChild(sourceDiv);
-            }
-    
-            return container.innerHTML;
+          const container = document.createElement("div");
+          container.classList.add("search-result");
+
+          data = data.replace(/^Search Results\s*/, "");
+
+          const sourceMatch = data.match(
+            /Source\s*:\s*([\s\S]*?)(Related Quer(y|ies):|$)/s
+          );
+          const relatedQueryMatch = data.match(
+            /Related Quer(y|ies):\s*([\s\S]*?)(Source:|$)/s
+          );
+
+          let responseText = data
+            .split(/Related Quer(y|ies):|Source:/)[0]
+            .trim();
+          let sourceText = sourceMatch ? sourceMatch[1].trim() : "";
+          let relatedQueriesText = relatedQueryMatch
+            ? relatedQueryMatch[2].trim()
+            : "";
+
+          responseText = responseText.replace(
+            /\*\*(.*?)\*\*/g,
+            "<strong>$1</strong>"
+          );
+
+          if (responseText) {
+            const responseDiv = document.createElement("div");
+            responseDiv.classList.add("response-section");
+            responseDiv.innerHTML = `<p>${responseText.replace(
+              /\n/g,
+              "<br>"
+            )}</p>`;
+            container.appendChild(responseDiv);
+          }
+
+          if (sourceText) {
+            const sourceDiv = document.createElement("div");
+            sourceDiv.classList.add("source-section");
+            sourceDiv.innerHTML = `<h3><strong>Source</strong></h3><p>${sourceText.replace(
+              /\n/g,
+              "<br>"
+            )}</p>`;
+            container.appendChild(sourceDiv);
+          }
+
+          return container.innerHTML;
         }
-    
+
         function processResponse(data) {
-            console.log("Full response data:", data);
-        
-    
-            if (data.error) {
-                displayErrorMessage(data.error);
-                return;
-            }
-    
-            currentTables = [];
-    
-            if (data.search_results) {
-                const formattedResponse = formatLLMResponse(data.search_results);
-                addMessageToChat("ai", formattedResponse);
-            }
-    
-            if (data.query) {
-                addMessageToChat("ai", `Generated SQL: <div class="sql-query">${data.query}</div><br> Insights: ${data.chat_insight}`);
-            }
-    
-            if (data.tables?.length > 0) {
-                data.tables.forEach(table => {
-                    const uniqueId = `${table.table_name}-${Date.now()}`;
-                    currentTables.push({ 
-                        uniqueId: uniqueId,
-                        html: table.table_html 
-                    });
-                    addTableToChat(uniqueId, table.table_html);
-                    addTableButtons(uniqueId);
-                });
-            }
-    
-            if (data.follow_up_questions && Object.keys(data.follow_up_questions).length > 0) {
-                addFollowUpQuestions(data.follow_up_questions);
-            }
+          console.log("Full response data:", data);
+
+          if (data.error) {
+            displayErrorMessage(data.error);
+            return;
+          }
+
+          currentTables = [];
+
+          if (data.search_results) {
+            const formattedResponse = formatLLMResponse(data.search_results);
+            addMessageToChat("ai", formattedResponse);
+          }
+
+          if (data.query) {
+            addMessageToChat(
+              "ai",
+              `Generated SQL: <div class="sql-query">${data.query}</div><br> Insights: ${data.chat_insight}`
+            );
+          }
+
+          if (data.tables?.length > 0) {
+            data.tables.forEach((table) => {
+              const uniqueId = `${table.table_name}-${Date.now()}`;
+              currentTables.push({
+                uniqueId: uniqueId,
+                html: table.table_html,
+              });
+              addTableToChat(uniqueId, table.table_html);
+              addTableButtons(uniqueId);
+            });
+          }
+
+          if (
+            data.follow_up_questions &&
+            Object.keys(data.follow_up_questions).length > 0
+          ) {
+            addFollowUpQuestions(data.follow_up_questions);
+          }
         }
-    
+
         function addFollowUpQuestions(followUps) {
-            const followUpContainer = document.createElement("div");
-            followUpContainer.className = "follow-up-container";
-    
-            const title = document.createElement("h3");
-            title.textContent = "Suggested Follow-up Questions";
-            title.style.marginTop = "20px";
-            title.style.marginBottom = "10px";
-            title.style.color = "#1d7efd";
-            followUpContainer.appendChild(title);
-    
-            const questionsList = document.createElement("div");
-            questionsList.className = "follow-up-questions";
-    
-            Object.entries(followUps).forEach(([key, question]) => {
-                if (question && question.trim()) {
-                    const questionElement = document.createElement("div");
-                    questionElement.className = "follow-up-question";
-                    questionElement.textContent = question;
-                    questionElement.style.cursor = "pointer";
-                    questionElement.style.padding = "8px 12px";
-                    questionElement.style.margin = "5px 0";
-                    questionElement.style.borderRadius = "4px";
-                    questionElement.style.backgroundColor = "var(--secondary-color)";
-                    questionElement.style.transition = "background-color 0.3s";
-    
-                    questionElement.addEventListener("mouseover", () => {
-                        questionElement.style.backgroundColor = "var(--secondary-hover-color)";
-                    });
-    
-                    questionElement.addEventListener("mouseout", () => {
-                        questionElement.style.backgroundColor = "var(--secondary-color)";
-                    });
-    
-                    questionElement.addEventListener("click", () => {
-                        promptInput.value = question;
-                        promptInput.focus();
-                    });
-    
-                    questionsList.appendChild(questionElement);
-                }
-            });
-    
-            followUpContainer.appendChild(questionsList);
-            chatResults.appendChild(followUpContainer);
-            window.scrollTo(0, document.body.scrollHeight);
+          const followUpContainer = document.createElement("div");
+          followUpContainer.className = "follow-up-container";
+
+          const title = document.createElement("h3");
+          title.textContent = "Suggested Follow-up Questions";
+          title.style.marginTop = "20px";
+          title.style.marginBottom = "10px";
+          title.style.color = "#1d7efd";
+          followUpContainer.appendChild(title);
+
+          const questionsList = document.createElement("div");
+          questionsList.className = "follow-up-questions";
+
+          Object.entries(followUps).forEach(([key, question]) => {
+            if (question && question.trim()) {
+              const questionElement = document.createElement("div");
+              questionElement.className = "follow-up-question";
+              questionElement.textContent = question;
+              questionElement.style.cursor = "pointer";
+              questionElement.style.padding = "8px 12px";
+              questionElement.style.margin = "5px 0";
+              questionElement.style.borderRadius = "4px";
+              questionElement.style.backgroundColor = "var(--secondary-color)";
+              questionElement.style.transition = "background-color 0.3s";
+
+              questionElement.addEventListener("mouseover", () => {
+                questionElement.style.backgroundColor =
+                  "var(--secondary-hover-color)";
+              });
+
+              questionElement.addEventListener("mouseout", () => {
+                questionElement.style.backgroundColor =
+                  "var(--secondary-color)";
+              });
+
+              questionElement.addEventListener("click", () => {
+                promptInput.value = question;
+                promptInput.focus();
+              });
+
+              questionsList.appendChild(questionElement);
+            }
+          });
+
+          followUpContainer.appendChild(questionsList);
+          chatResults.appendChild(followUpContainer);
+          window.scrollTo(0, document.body.scrollHeight);
         }
-    
+
         function addTableToChat(uniqueId, tableHTML) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(tableHTML, "text/html");
-            const table = doc.querySelector("table");
-            
-            if (!table) return;
-    
-            const tableContainer = document.createElement("div");
-            tableContainer.className = "table-container";
-            tableContainer.id = `table-container-${uniqueId}`;
-    
-            const wrapper = document.createElement("div");
-            wrapper.className = "table-wrapper";
-    
-            table.removeAttribute("id");
-            table.classList.add("result-table");
-            doc.querySelectorAll("style").forEach(el => el.remove());
-            table.querySelectorAll("th.blank, td.index_col, th.row_heading").forEach(el => el.remove());
-    
-            const rows = Array.from(table.querySelectorAll("tbody tr"));
-            const rowsPerPage = 5;
-            let currentPage = 1;
-    
-            const pagination = document.createElement("div");
-            pagination.className = "pagination-controls";
-    
-            const prevBtn = createPaginationButton("←", () => changePage(-1));
-            const nextBtn = createPaginationButton("→", () => changePage(1));
-            const pageInfo = document.createElement("span");
-            pageInfo.className = "pagination-info";
-    
-            pagination.append(prevBtn, pageInfo, nextBtn);
-            wrapper.append(table, pagination);
-            tableContainer.append(wrapper);
-    
-            chatResults.appendChild(tableContainer);
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(tableHTML, "text/html");
+          const table = doc.querySelector("table");
+
+          if (!table) return;
+
+          const tableContainer = document.createElement("div");
+          tableContainer.className = "table-container";
+          tableContainer.id = `table-container-${uniqueId}`;
+
+          const wrapper = document.createElement("div");
+          wrapper.className = "table-wrapper";
+
+          table.removeAttribute("id");
+          table.classList.add("result-table");
+          doc.querySelectorAll("style").forEach((el) => el.remove());
+          table
+            .querySelectorAll("th.blank, td.index_col, th.row_heading")
+            .forEach((el) => el.remove());
+
+          const rows = Array.from(table.querySelectorAll("tbody tr"));
+          const rowsPerPage = 5;
+          let currentPage = 1;
+
+          const pagination = document.createElement("div");
+          pagination.className = "pagination-controls";
+
+          const prevBtn = createPaginationButton("←", () => changePage(-1));
+          const nextBtn = createPaginationButton("→", () => changePage(1));
+          const pageInfo = document.createElement("span");
+          pageInfo.className = "pagination-info";
+
+          pagination.append(prevBtn, pageInfo, nextBtn);
+          wrapper.append(table, pagination);
+          tableContainer.append(wrapper);
+
+          chatResults.appendChild(tableContainer);
+          renderTable();
+
+          function renderTable() {
+            const tbody = table.querySelector("tbody");
+            tbody.innerHTML = "";
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            rows.slice(start, end).forEach((row) => tbody.appendChild(row));
+
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = end >= rows.length;
+            pageInfo.textContent = `Page ${currentPage} of ${Math.ceil(
+              rows.length / rowsPerPage
+            )}`;
+            window.scrollTo(0, document.body.scrollHeight);
+          }
+
+          function changePage(delta) {
+            currentPage += delta;
             renderTable();
-    
-            function renderTable() {
-                const tbody = table.querySelector("tbody");
-                tbody.innerHTML = "";
-                const start = (currentPage - 1) * rowsPerPage;
-                const end = start + rowsPerPage;
-                rows.slice(start, end).forEach(row => tbody.appendChild(row));
-    
-                prevBtn.disabled = currentPage === 1;
-                nextBtn.disabled = end >= rows.length;
-                pageInfo.textContent = `Page ${currentPage} of ${Math.ceil(rows.length / rowsPerPage)}`;
-                window.scrollTo(0, document.body.scrollHeight);
-            }
-    
-            function changePage(delta) {
-                currentPage += delta;
-                renderTable();
-            }
+          }
         }
-    
+
         function addTableButtons(uniqueId) {
-            const buttonsContainer = document.createElement("div");
-            buttonsContainer.style.display = "flex";
-            buttonsContainer.style.gap = "10px";
-            buttonsContainer.style.marginTop = "10px";
-            
-            // Download button
-            const downloadBtn = document.createElement("button");
-            downloadBtn.className = "download-btn";
-            downloadBtn.innerHTML = `<span class="material-symbols-rounded">download</span> Download`;
-            downloadBtn.addEventListener("click", () => downloadTable(uniqueId));
-            
-            // Visualization button
-            const visualizeBtn = document.createElement("button");
-            visualizeBtn.className = "download-btn";
-            visualizeBtn.style.backgroundColor = "#6f42c1";
-            visualizeBtn.innerHTML = `<span class="material-symbols-rounded">bar_chart</span> Visualize`;
-            visualizeBtn.addEventListener("click", (e) => {
-                e.preventDefault();
-                createVisualizationPanel(uniqueId);
-                visualizationPanel.classList.add("visible");
-                overlay.classList.add("visible");
-            });
-            
-            buttonsContainer.appendChild(downloadBtn);
-            buttonsContainer.appendChild(visualizeBtn);
-            
-            const tableContainer = document.getElementById(`table-container-${uniqueId}`);
-            if (tableContainer) {
-                tableContainer.insertAdjacentElement("afterend", buttonsContainer);
-            }
+          const buttonsContainer = document.createElement("div");
+          buttonsContainer.style.display = "flex";
+          buttonsContainer.style.gap = "10px";
+          buttonsContainer.style.marginTop = "10px";
+
+          // Download button
+          const downloadBtn = document.createElement("button");
+          downloadBtn.className = "download-btn";
+          downloadBtn.innerHTML = `<span class="material-symbols-rounded">download</span> Download`;
+          downloadBtn.addEventListener("click", () => downloadTable(uniqueId));
+
+          // Visualization button
+          const visualizeBtn = document.createElement("button");
+          visualizeBtn.className = "download-btn";
+          visualizeBtn.style.backgroundColor = "#6f42c1";
+          visualizeBtn.innerHTML = `<span class="material-symbols-rounded">bar_chart</span> Visualize`;
+          visualizeBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            createVisualizationPanel(uniqueId);
+            visualizationPanel.classList.add("visible");
+            overlay.classList.add("visible");
+          });
+
+          buttonsContainer.appendChild(downloadBtn);
+          buttonsContainer.appendChild(visualizeBtn);
+
+          const tableContainer = document.getElementById(
+            `table-container-${uniqueId}`
+          );
+          if (tableContainer) {
+            tableContainer.insertAdjacentElement("afterend", buttonsContainer);
+          }
         }
         function createVisualizationPanel(uniqueId) {
-    // Clear existing content
-    visualizationPanel.innerHTML = `
+          // Clear existing content
+          visualizationPanel.innerHTML = `
         <div class="visualization-header">
-            <h2>Data Visualization: ${uniqueId.split('-')[0]}</h2>
+            <h2>Data Visualization: ${uniqueId.split("-")[0]}</h2>
             <button class="close-visualization material-symbols-rounded">close</button>
         </div>
         <div class="visualization-content" id="visualization-content"></div>
     `;
-    
-    const closeBtn = visualizationPanel.querySelector(".close-visualization");
-    closeBtn.addEventListener("click", () => {
-        visualizationPanel.classList.remove("visible");
-        overlay.classList.remove("visible");
-    });
-    
-    // Add only the specified table to the visualization panel
-    const table = currentTables.find(t => t.uniqueId === uniqueId);
-    if (table) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(table.html, "text/html");
-        const tableElement = doc.querySelector("table");
-        
-        // Remove the index column (first column)
-        const rows = tableElement.querySelectorAll('tr');
-        rows.forEach(row => {
-            // Remove first cell (td or th) in each row
-            const firstCell = row.querySelector('th, td');
-            if (firstCell) {
+
+          const closeBtn = visualizationPanel.querySelector(
+            ".close-visualization"
+          );
+          closeBtn.addEventListener("click", () => {
+            visualizationPanel.classList.remove("visible");
+            overlay.classList.remove("visible");
+          });
+
+          // Add only the specified table to the visualization panel
+          const table = currentTables.find((t) => t.uniqueId === uniqueId);
+          if (table) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(table.html, "text/html");
+            const tableElement = doc.querySelector("table");
+
+            // Remove the index column (first column)
+            const rows = tableElement.querySelectorAll("tr");
+            rows.forEach((row) => {
+              // Remove first cell (td or th) in each row
+              const firstCell = row.querySelector("th, td");
+              if (firstCell) {
                 row.removeChild(firstCell);
-            }
-        });
-        
-        // Create the same container structure as main tables
-        const tableContainer = document.createElement("div");
-        tableContainer.className = "table-container";
-        tableContainer.id = `visualization-table-container-${uniqueId}`;
-        
-        const wrapper = document.createElement("div");
-        wrapper.className = "table-wrapper";
-        
-        // Clone the table and maintain its classes
-        const clonedTable = tableElement.cloneNode(true);
-        clonedTable.classList.add("result-table"); // Ensure class is added
-        
-        wrapper.appendChild(clonedTable);
-        tableContainer.appendChild(wrapper);
-        
-        const visualizationContent = document.getElementById("visualization-content");
-        visualizationContent.appendChild(tableContainer);
-        
-        // Add pagination to the visualization panel table
-        addPaginationToVisualizationTable(uniqueId, clonedTable);
-        addChartControlsToPanel(uniqueId);
-    }
-}
+              }
+            });
 
-function addPaginationToVisualizationTable(uniqueId, table) {
-    const rows = Array.from(table.querySelectorAll("tbody tr"));
-    const rowsPerPage = 5;
-    let currentPage = 1;
+            // Create the same container structure as main tables
+            const tableContainer = document.createElement("div");
+            tableContainer.className = "table-container";
+            tableContainer.id = `visualization-table-container-${uniqueId}`;
 
-    const pagination = document.createElement("div");
-    pagination.className = "pagination-controls";
+            const wrapper = document.createElement("div");
+            wrapper.className = "table-wrapper";
 
-    const prevBtn = createPaginationButton("←", () => changePage(-1));
-    const nextBtn = createPaginationButton("→", () => changePage(1));
-    const pageInfo = document.createElement("span");
-    pageInfo.className = "pagination-info";
+            // Clone the table and maintain its classes
+            const clonedTable = tableElement.cloneNode(true);
+            clonedTable.classList.add("result-table"); // Ensure class is added
 
-    pagination.append(prevBtn, pageInfo, nextBtn);
-    
-    // Insert pagination after the table
-    table.insertAdjacentElement("afterend", pagination);
+            wrapper.appendChild(clonedTable);
+            tableContainer.appendChild(wrapper);
 
-    renderTable();
+            const visualizationContent = document.getElementById(
+              "visualization-content"
+            );
+            visualizationContent.appendChild(tableContainer);
 
-    function renderTable() {
-        const tbody = table.querySelector("tbody");
-        tbody.innerHTML = "";
-        const start = (currentPage - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        rows.slice(start, end).forEach(row => tbody.appendChild(row));
+            // Add pagination to the visualization panel table
+            addPaginationToVisualizationTable(uniqueId, clonedTable);
+            addChartControlsToPanel(uniqueId);
+          }
+        }
 
-        prevBtn.disabled = currentPage === 1;
-        nextBtn.disabled = end >= rows.length;
-        pageInfo.textContent = `Page ${currentPage} of ${Math.ceil(rows.length / rowsPerPage)}`;
-    }
+        function addPaginationToVisualizationTable(uniqueId, table) {
+          const rows = Array.from(table.querySelectorAll("tbody tr"));
+          const rowsPerPage = 5;
+          let currentPage = 1;
 
-    function changePage(delta) {
-        currentPage += delta;
-        renderTable();
-    }
-}
-    
+          const pagination = document.createElement("div");
+          pagination.className = "pagination-controls";
+
+          const prevBtn = createPaginationButton("←", () => changePage(-1));
+          const nextBtn = createPaginationButton("→", () => changePage(1));
+          const pageInfo = document.createElement("span");
+          pageInfo.className = "pagination-info";
+
+          pagination.append(prevBtn, pageInfo, nextBtn);
+
+          // Insert pagination after the table
+          table.insertAdjacentElement("afterend", pagination);
+
+          renderTable();
+
+          function renderTable() {
+            const tbody = table.querySelector("tbody");
+            tbody.innerHTML = "";
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            rows.slice(start, end).forEach((row) => tbody.appendChild(row));
+
+            prevBtn.disabled = currentPage === 1;
+            nextBtn.disabled = end >= rows.length;
+            pageInfo.textContent = `Page ${currentPage} of ${Math.ceil(
+              rows.length / rowsPerPage
+            )}`;
+          }
+
+          function changePage(delta) {
+            currentPage += delta;
+            renderTable();
+          }
+        }
+
         async function addChartControlsToPanel(uniqueId) {
-            const chartContainer = document.createElement("div");
-            chartContainer.className = "chart-container";
-            chartContainer.id = `chart-${uniqueId}`;
-            
-            const chartTitle = document.createElement("h3");
-            chartTitle.textContent = `Visualize ${uniqueId.split('-')[0]}`;
-            chartContainer.appendChild(chartTitle);
-    
-            const controlsDiv = document.createElement("div");
-            controlsDiv.className = "chart-controls";
-            
-            // X-Axis Select
-            const xAxisSelect = document.createElement("select");
-            xAxisSelect.id = `x-axis-${uniqueId}`;
-            xAxisSelect.innerHTML = '<option value="">Select X-Axis</option>';
-            
-            // Y-Axis Select
-            const yAxisSelect = document.createElement("select");
-            yAxisSelect.id = `y-axis-${uniqueId}`;
-            yAxisSelect.innerHTML = '<option value="">Select Y-Axis</option>';
-            
-            // Chart Type Select
-            const chartTypeSelect = document.createElement("select");
-            chartTypeSelect.id = `chart-type-${uniqueId}`;
-            chartTypeSelect.innerHTML = `
+          const chartContainer = document.createElement("div");
+          chartContainer.className = "chart-container";
+          chartContainer.id = `chart-${uniqueId}`;
+
+          const chartTitle = document.createElement("h3");
+          chartTitle.textContent = `Visualize ${uniqueId.split("-")[0]}`;
+          chartContainer.appendChild(chartTitle);
+
+          const controlsDiv = document.createElement("div");
+          controlsDiv.className = "chart-controls";
+
+          // X-Axis Select
+          const xAxisSelect = document.createElement("select");
+          xAxisSelect.id = `x-axis-${uniqueId}`;
+          xAxisSelect.innerHTML = '<option value="">Select X-Axis</option>';
+
+          // Y-Axis Select
+          const yAxisSelect = document.createElement("select");
+          yAxisSelect.id = `y-axis-${uniqueId}`;
+          yAxisSelect.innerHTML = '<option value="">Select Y-Axis</option>';
+
+          // Chart Type Select
+          const chartTypeSelect = document.createElement("select");
+          chartTypeSelect.id = `chart-type-${uniqueId}`;
+          chartTypeSelect.innerHTML = `
                 <option value="">Select Chart Type</option>
                 <option value="line">Line Chart</option>
                 <option value="bar">Bar Chart</option>
                 <option value="pie">Pie Chart</option>
                 <option value="scatter">Scatter Plot</option>
             `;
-            
-            // Generate Chart Button
-            const generateBtn = document.createElement("button");
-            generateBtn.textContent = "Generate Chart";
-            generateBtn.addEventListener("click", () => generateChart(uniqueId));
-            
-            controlsDiv.appendChild(xAxisSelect);
-            controlsDiv.appendChild(yAxisSelect);
-            controlsDiv.appendChild(chartTypeSelect);
-            controlsDiv.appendChild(generateBtn);
-            chartContainer.appendChild(controlsDiv);
-            
-            // Chart Display Area
-            const chartDiv = document.createElement("div");
-            chartDiv.id = `chart-display-${uniqueId}`;
-            chartDiv.style.height = "400px";
-            chartContainer.appendChild(chartDiv);
-            
-            // Add to visualization content
-            const visualizationContent = document.getElementById("visualization-content");
-            if (visualizationContent) {
-                visualizationContent.appendChild(chartContainer);
-            }
-            
-            // Fetch columns for the table
-            setTimeout(() => fetchTableColumns(uniqueId), 100);
+
+          // Generate Chart Button
+          const generateBtn = document.createElement("button");
+          generateBtn.textContent = "Generate Chart";
+          generateBtn.addEventListener("click", () => generateChart(uniqueId));
+
+          controlsDiv.appendChild(xAxisSelect);
+          controlsDiv.appendChild(yAxisSelect);
+          controlsDiv.appendChild(chartTypeSelect);
+          controlsDiv.appendChild(generateBtn);
+          chartContainer.appendChild(controlsDiv);
+
+          // Chart Display Area
+          const chartDiv = document.createElement("div");
+          chartDiv.id = `chart-display-${uniqueId}`;
+          chartDiv.style.height = "400px";
+          chartContainer.appendChild(chartDiv);
+
+          // Add to visualization content
+          const visualizationContent = document.getElementById(
+            "visualization-content"
+          );
+          if (visualizationContent) {
+            visualizationContent.appendChild(chartContainer);
+          }
+
+          // Fetch columns for the table
+          setTimeout(() => fetchTableColumns(uniqueId), 100);
         }
-    
+
         async function fetchTableColumns(uniqueId) {
-            try {
-                // Get the table from visualization panel instead of main container
-                const visualizationContent = document.getElementById("visualization-content");
-                const table = visualizationContent.querySelector("table");
-                
-                if (!table) {
-                    console.error("Table not found in visualization panel");
-                    return;
-                }
-                
-                const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.trim());
-                
-                const xAxisSelect = document.getElementById(`x-axis-${uniqueId}`);
-                const yAxisSelect = document.getElementById(`y-axis-${uniqueId}`);
-                
-                // Clear existing options
-                xAxisSelect.innerHTML = '<option value="">Select X-Axis</option>';
-                yAxisSelect.innerHTML = '<option value="">Select Y-Axis</option>';
-                
-                // Populate new options
-                headers.forEach(column => {
-                    const xOption = document.createElement("option");
-                    xOption.value = column;
-                    xOption.textContent = column;
-                    xAxisSelect.appendChild(xOption);
-                    
-                    const yOption = document.createElement("option");
-                    yOption.value = column;
-                    yOption.textContent = column;
-                    yAxisSelect.appendChild(yOption);
-                });
-            } catch (error) {
-                console.error("Error fetching table columns:", error);
+          try {
+            // Get the table from visualization panel instead of main container
+            const visualizationContent = document.getElementById(
+              "visualization-content"
+            );
+            const table = visualizationContent.querySelector("table");
+
+            if (!table) {
+              console.error("Table not found in visualization panel");
+              return;
             }
+
+            const headers = Array.from(table.querySelectorAll("thead th")).map(
+              (th) => th.textContent.trim()
+            );
+
+            const xAxisSelect = document.getElementById(`x-axis-${uniqueId}`);
+            const yAxisSelect = document.getElementById(`y-axis-${uniqueId}`);
+
+            // Clear existing options
+            xAxisSelect.innerHTML = '<option value="">Select X-Axis</option>';
+            yAxisSelect.innerHTML = '<option value="">Select Y-Axis</option>';
+
+            // Populate new options
+            headers.forEach((column) => {
+              const xOption = document.createElement("option");
+              xOption.value = column;
+              xOption.textContent = column;
+              xAxisSelect.appendChild(xOption);
+
+              const yOption = document.createElement("option");
+              yOption.value = column;
+              yOption.textContent = column;
+              yAxisSelect.appendChild(yOption);
+            });
+          } catch (error) {
+            console.error("Error fetching table columns:", error);
+          }
         }
-    
+
         async function generateChart(uniqueId) {
-            try {
-                await ensurePlotlyLoaded();
-                
-                const xAxis = document.getElementById(`x-axis-${uniqueId}`).value;
-                const yAxis = document.getElementById(`y-axis-${uniqueId}`).value;
-                const chartType = document.getElementById(`chart-type-${uniqueId}`).value;
-                
-                if (!xAxis || !yAxis || !chartType) {
-                    alert("Please select all chart options");
-                    return;
-                }
-    
-                const table = document.querySelector(`#table-container-${uniqueId} table`);
-                if (!table) {
-                    throw new Error("Table not found");
-                }
-    
-                const headers = Array.from(table.querySelectorAll("thead th")).map(th => th.textContent.trim());
-                const rows = Array.from(table.querySelectorAll("tbody tr")).map(row => 
-                    Array.from(row.querySelectorAll("td")).map(td => td.textContent.trim())
-                );
-    
-                const xIndex = headers.indexOf(xAxis);
-                const yIndex = headers.indexOf(yAxis);
-                
-                if (xIndex === -1 || yIndex === -1) {
-                    throw new Error("Invalid axis selection");
-                }
-    
-                const xValues = rows.map(row => row[xIndex]);
-                const yValues = rows.map(row => parseFloat(row[yIndex]) || 0);
-    
-                const chartDiv = document.getElementById(`chart-display-${uniqueId}`);
-                chartDiv.innerHTML = "";
-    
-                let chartData;
-                switch (chartType) {
-                    case "line":
-                        chartData = [{
-                            x: xValues,
-                            y: yValues,
-                            type: 'line'
-                        }];
-                        break;
-                    case "bar":
-                        chartData = [{
-                            x: xValues,
-                            y: yValues,
-                            type: 'bar'
-                        }];
-                        break;
-                    case "pie":
-                        chartData = [{
-                            labels: xValues,
-                            values: yValues,
-                            type: 'pie'
-                        }];
-                        break;
-                    case "scatter":
-                        chartData = [{
-                            x: xValues,
-                            y: yValues,
-                            mode: 'markers',
-                            type: 'scatter'
-                        }];
-                        break;
-                    default:
-                        throw new Error("Invalid chart type");
-                }
-    
-                const layout = {
-                    title: `${uniqueId.split('-')[0]} - ${xAxis} vs ${yAxis}`,
-                    xaxis: { title: xAxis },
-                    yaxis: { title: yAxis }
-                };
-    
-                Plotly.newPlot(chartDiv, chartData, layout);
-                
-            } catch (error) {
-                console.error("Chart generation error:", error);
-                const chartDiv = document.getElementById(`chart-display-${uniqueId}`);
-                if (chartDiv) {
-                    chartDiv.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
-                }
-                alert(`Error generating chart: ${error.message}`);
+          try {
+            await ensurePlotlyLoaded();
+
+            const xAxis = document.getElementById(`x-axis-${uniqueId}`).value;
+            const yAxis = document.getElementById(`y-axis-${uniqueId}`).value;
+            const chartType = document.getElementById(
+              `chart-type-${uniqueId}`
+            ).value;
+
+            if (!xAxis || !yAxis || !chartType) {
+              alert("Please select all chart options");
+              return;
             }
+
+            const table = document.querySelector(
+              `#table-container-${uniqueId} table`
+            );
+            if (!table) {
+              throw new Error("Table not found");
+            }
+
+            const headers = Array.from(table.querySelectorAll("thead th")).map(
+              (th) => th.textContent.trim()
+            );
+            const rows = Array.from(table.querySelectorAll("tbody tr")).map(
+              (row) =>
+                Array.from(row.querySelectorAll("td")).map((td) =>
+                  td.textContent.trim()
+                )
+            );
+
+            const xIndex = headers.indexOf(xAxis);
+            const yIndex = headers.indexOf(yAxis);
+
+            if (xIndex === -1 || yIndex === -1) {
+              throw new Error("Invalid axis selection");
+            }
+
+            const xValues = rows.map((row) => row[xIndex]);
+            const yValues = rows.map((row) => parseFloat(row[yIndex]) || 0);
+
+            const chartDiv = document.getElementById(
+              `chart-display-${uniqueId}`
+            );
+            chartDiv.innerHTML = "";
+
+            let chartData;
+            switch (chartType) {
+              case "line":
+                chartData = [
+                  {
+                    x: xValues,
+                    y: yValues,
+                    type: "line",
+                  },
+                ];
+                break;
+              case "bar":
+                chartData = [
+                  {
+                    x: xValues,
+                    y: yValues,
+                    type: "bar",
+                  },
+                ];
+                break;
+              case "pie":
+                chartData = [
+                  {
+                    labels: xValues,
+                    values: yValues,
+                    type: "pie",
+                  },
+                ];
+                break;
+              case "scatter":
+                chartData = [
+                  {
+                    x: xValues,
+                    y: yValues,
+                    mode: "markers",
+                    type: "scatter",
+                  },
+                ];
+                break;
+              default:
+                throw new Error("Invalid chart type");
+            }
+
+            const layout = {
+              title: `${uniqueId.split("-")[0]} - ${xAxis} vs ${yAxis}`,
+              xaxis: { title: xAxis },
+              yaxis: { title: yAxis },
+            };
+
+            Plotly.newPlot(chartDiv, chartData, layout);
+          } catch (error) {
+            console.error("Chart generation error:", error);
+            const chartDiv = document.getElementById(
+              `chart-display-${uniqueId}`
+            );
+            if (chartDiv) {
+              chartDiv.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+            }
+            alert(`Error generating chart: ${error.message}`);
+          }
         }
-    
+
         async function downloadTable(uniqueId) {
-            try {
-                const table = document.querySelector(`#table-container-${uniqueId} table`);
-                if (table) {
-                    const html = table.outerHTML;
-                    const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${uniqueId.split('-')[0]}.xls`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                }
-            } catch (error) {
-                console.error("Download error:", error);
-                displayErrorMessage("Failed to download table. Please try again.");
+          try {
+            const table = document.querySelector(
+              `#table-container-${uniqueId} table`
+            );
+            if (table) {
+              const html = table.outerHTML;
+              const blob = new Blob([html], {
+                type: "application/vnd.ms-excel",
+              });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${uniqueId.split("-")[0]}.xls`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
             }
+          } catch (error) {
+            console.error("Download error:", error);
+            displayErrorMessage("Failed to download table. Please try again.");
+          }
         }
-    
+
         // Helper Functions
         function addMessageToChat(role, content) {
-            console.log("addMessageToChat called with role:", role, "and content:", content);
-    
-            const messageDiv = document.createElement("div");
-            messageDiv.className = `chat-message ${role}-message`;
-            
-            // Create content container
-            const contentDiv = document.createElement("div");
-            contentDiv.innerHTML = content;
-            messageDiv.appendChild(contentDiv);
-    
-            // Add feedback buttons for AI messages
-            if (role === "ai") {
-                const feedbackDiv = document.createElement("div");
-                feedbackDiv.className = "feedback-buttons";
-                const messageId = Date.now();
-                feedbackDiv.innerHTML = `
+          console.log(
+            "addMessageToChat called with role:",
+            role,
+            "and content:",
+            content
+          );
+
+          const messageDiv = document.createElement("div");
+          messageDiv.className = `chat-message ${role}-message`;
+
+          // Create content container
+          const contentDiv = document.createElement("div");
+          contentDiv.innerHTML = content;
+          messageDiv.appendChild(contentDiv);
+
+          // Add feedback buttons for AI messages
+          if (role === "ai") {
+            const feedbackDiv = document.createElement("div");
+            feedbackDiv.className = "feedback-buttons";
+            const messageId = Date.now();
+            feedbackDiv.innerHTML = `
                     <button class="feedback-btn like-btn" data-message-id="${messageId}">
                         <span class="material-symbols-rounded">thumb_up</span> Helpful
                     </button>
@@ -2118,66 +2821,71 @@ function addPaginationToVisualizationTable(uniqueId, table) {
                         <span class="material-symbols-rounded">thumb_down</span> Not Helpful
                     </button>
                 `;
-                
-                // Add event listeners
-                const likeBtn = feedbackDiv.querySelector('.like-btn');
-                const dislikeBtn = feedbackDiv.querySelector('.dislike-btn');
-                
-                likeBtn.addEventListener('click', function() {
-                    this.classList.add('liked');
-                    dislikeBtn.classList.remove('disliked');
-                    sendFeedback(messageId, 'like');
-                });
-                
-                dislikeBtn.addEventListener('click', function() {
-                    this.classList.add('disliked');
-                    likeBtn.classList.remove('liked');
-                    sendFeedback(messageId, 'dislike');
-                });
-                
-                messageDiv.appendChild(feedbackDiv);
-            }
-                            // Add FAQ button for user messages
-    if (role === "user") {
-        const faqButton = document.createElement("button");
-        faqButton.className = "feedback-btn";
-        faqButton.innerHTML = `
+
+            // Add event listeners
+            const likeBtn = feedbackDiv.querySelector(".like-btn");
+            const dislikeBtn = feedbackDiv.querySelector(".dislike-btn");
+
+            likeBtn.addEventListener("click", function () {
+              this.classList.add("liked");
+              dislikeBtn.classList.remove("disliked");
+              sendFeedback(messageId, "like");
+            });
+
+            dislikeBtn.addEventListener("click", function () {
+              this.classList.add("disliked");
+              likeBtn.classList.remove("liked");
+              sendFeedback(messageId, "dislike");
+            });
+
+            messageDiv.appendChild(feedbackDiv);
+          }
+          // Add FAQ button for user messages
+          if (role === "user") {
+            const faqButton = document.createElement("button");
+            faqButton.className = "feedback-btn";
+            faqButton.innerHTML = `
             <span class="material-symbols-rounded">help_outline</span> Add to FAQs
         `;
-        faqButton.style.marginTop = "10px";
-        faqButton.style.display = "inline-flex";
-        faqButton.style.alignItems = "center";
-        faqButton.style.gap = "6px";
-        
-        faqButton.addEventListener("click", async () => {
-            const userQuery = contentDiv.textContent.trim();
-            if (!userQuery) {
+            faqButton.style.marginTop = "10px";
+            faqButton.style.display = "inline-flex";
+            faqButton.style.alignItems = "center";
+            faqButton.style.gap = "6px";
+
+            faqButton.addEventListener("click", async () => {
+              const userQuery = contentDiv.textContent.trim();
+              if (!userQuery) {
                 alert("No query to add to FAQs");
                 return;
-            }
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const section = urlParams.get("section");
-            if (!section) {
-    alert("Could not determine subject area");
-    return;
-}
-            try {
-                const response = await fetch(`${API_BASE_URL}/add_to_faqs/?subject=${encodeURIComponent(section)}`, {
-                    method: 'POST',
+              }
+
+              const urlParams = new URLSearchParams(window.location.search);
+              const section = urlParams.get("section");
+              if (!section) {
+                alert("Could not determine subject area");
+                return;
+              }
+              try {
+                const response = await fetch(
+                  `${API_BASE_URL}/add_to_faqs/?subject=${encodeURIComponent(
+                    section
+                  )}`,
+                  {
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json',
+                      "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ 
-                        query: userQuery,
-                        answer: "" // You can leave this empty or add the AI response if available
-                    })
-                });
+                    body: JSON.stringify({
+                      query: userQuery,
+                      answer: "", // You can leave this empty or add the AI response if available
+                    }),
+                  }
+                );
 
                 const data = await response.json();
-                
+
                 if (!response.ok) {
-                    throw new Error(data.detail || "Failed to add to FAQs");
+                  throw new Error(data.detail || "Failed to add to FAQs");
                 }
 
                 // Show success message
@@ -2186,150 +2894,161 @@ function addPaginationToVisualizationTable(uniqueId, table) {
                 successMsg.style.marginTop = "5px";
                 successMsg.textContent = "Added to FAQs successfully!";
                 messageDiv.appendChild(successMsg);
-                
+
                 // Remove the message after 2 seconds
                 setTimeout(() => {
-                    successMsg.remove();
+                  successMsg.remove();
                 }, 10000);
-                
-            } catch (error) {
+              } catch (error) {
                 console.error("Error:", error);
                 const errorMsg = document.createElement("div");
                 errorMsg.style.color = "#F44336";
                 errorMsg.style.marginTop = "5px";
                 errorMsg.textContent = error.message;
                 messageDiv.appendChild(errorMsg);
-            }
-        });
-        
-        messageDiv.appendChild(faqButton);
-    }
+              }
+            });
 
-    
-            // Append to chat results
-            const chatResults = document.getElementById("chat-results");
-            if (chatResults) {
-                chatResults.appendChild(messageDiv);
-            } else {
-                console.error("Chat Results container not found!");
-            }
-    
-            window.scrollTo(0, document.body.scrollHeight);
+            messageDiv.appendChild(faqButton);
+          }
+
+          // Append to chat results
+          const chatResults = document.getElementById("chat-results");
+          if (chatResults) {
+            chatResults.appendChild(messageDiv);
+          } else {
+            console.error("Chat Results container not found!");
+          }
+
+          window.scrollTo(0, document.body.scrollHeight);
         }
-        
+
         function showLoadingIndicator() {
-            const loader = document.createElement("div");
-            loader.className = "loading-indicator";
-            loader.innerHTML = '<span></span><span></span><span></span>';
-            chatResults.appendChild(loader);
+          const loader = document.createElement("div");
+          loader.className = "loading-indicator";
+          loader.innerHTML = "<span></span><span></span><span></span>";
+          chatResults.appendChild(loader);
         }
-    
-        function removeLoadingIndicator() {
-            const loader = document.querySelector(".loading-indicator");
-            if (loader) loader.remove();
-        }
-    
-        function displayErrorMessage(message) {
-            const errorDiv = document.createElement("div");
-            errorDiv.className = "chat-message error-message";
-            errorDiv.textContent = message;
-            chatResults.appendChild(errorDiv);
-        }
-    
-        function createPaginationButton(text, onClick) {
-            const btn = document.createElement("button");
-            btn.innerHTML = text;
-            btn.addEventListener("click", onClick);
-            return btn;
-        }
-    
-        async function ensurePlotlyLoaded() {
-            if (typeof Plotly === 'undefined') {
-                return new Promise((resolve) => {
-                    const script = document.createElement('script');
-                    script.src = 'https://cdn.plot.ly/plotly-latest.min.js';
-                    script.onload = resolve;
-                    document.head.appendChild(script);
-                });
-            }
-        }
-        
-        async function sendFeedback(messageId, feedbackType) {
-            try {
-                const messageElement = document.querySelector(`[data-message-id="${messageId}"]`).closest('.chat-message');
-                const messageContent = messageElement.querySelector('div:first-child').innerText;
-                
-                // Extract table name if available (you might need to adjust this based on your actual response structure)
-                let tableName = 'general_chat';
-                const tableElement = messageElement.querySelector('table');
-                if (tableElement) {
-                    tableName = tableElement.getAttribute('data-table-name') || 'data_table';
-                }
-    
-                const response = await fetch(`${API_BASE_URL}/submit_feedback/`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        table_name: tableName,
-                        feedback_type: feedbackType,
-                        user_query: promptInput.value, // or messageContent if you prefer
-                        sql_query: '' // You'll need to extract this if available
-                    })
-                });
-                
-                if (!response.ok) {
-                    console.error("Feedback submission failed");
-                } else {
-                    const result = await response.json();
-                    console.log("Feedback result:", result);
-                }
-            } catch (error) {
-                console.error("Error submitting feedback:", error);
-            }
-        }
-    
-    function toggleTheme() {
-    const root = document.documentElement;
-    const isDarkTheme = getComputedStyle(root).getPropertyValue('--primary-color').trim() === '#ffffff';
-    
-    if (isDarkTheme) {
-        // Switch to dark theme
-        root.style.setProperty('--table-border-color', 'rgba(255, 255, 255, 0.1)');
-        root.style.setProperty('--text-color', '#edf3ff');
-        root.style.setProperty('--subheading-color', '#97a7ca');
-        root.style.setProperty('--placeholder-color', '#c3cdde');
-        root.style.setProperty('--primary-color', '#101623');
-        root.style.setProperty('--secondary-color', '#283045');
-        root.style.setProperty('--secondary-hover-color', '#333e58');
-        root.style.setProperty('--scrollbar-color', '#626a7f');
-        themeTogglerBtn.textContent = 'light_mode';
-    } else {
-        // Switch to light theme (default)
-        root.style.setProperty('--table-border-color', 'rgba(0, 0, 0, 0.1)');
-        root.style.setProperty('--text-color', '#333333');
-        root.style.setProperty('--subheading-color', '#555555');
-        root.style.setProperty('--placeholder-color', '#777777');
-        root.style.setProperty('--primary-color', '#ffffff');
-        root.style.setProperty('--secondary-color', '#f0f0f0');
-        root.style.setProperty('--secondary-hover-color', '#e0e0e0');
-        root.style.setProperty('--scrollbar-color', '#cccccc');
-        themeTogglerBtn.textContent = 'dark_mode';
-    }
-}
 
-// Initialize theme toggler button to dark mode icon (since we start in light mode)
-themeTogglerBtn.textContent = 'dark_mode';
-    
+        function removeLoadingIndicator() {
+          const loader = document.querySelector(".loading-indicator");
+          if (loader) loader.remove();
+        }
+
+        function displayErrorMessage(message) {
+          const errorDiv = document.createElement("div");
+          errorDiv.className = "chat-message error-message";
+          errorDiv.textContent = message;
+          chatResults.appendChild(errorDiv);
+        }
+
+        function createPaginationButton(text, onClick) {
+          const btn = document.createElement("button");
+          btn.innerHTML = text;
+          btn.addEventListener("click", onClick);
+          return btn;
+        }
+
+        async function ensurePlotlyLoaded() {
+          if (typeof Plotly === "undefined") {
+            return new Promise((resolve) => {
+              const script = document.createElement("script");
+              script.src = "https://cdn.plot.ly/plotly-latest.min.js";
+              script.onload = resolve;
+              document.head.appendChild(script);
+            });
+          }
+        }
+
+        async function sendFeedback(messageId, feedbackType) {
+          try {
+            const messageElement = document
+              .querySelector(`[data-message-id="${messageId}"]`)
+              .closest(".chat-message");
+            const messageContent =
+              messageElement.querySelector("div:first-child").innerText;
+
+            // Extract table name if available (you might need to adjust this based on your actual response structure)
+            let tableName = "general_chat";
+            const tableElement = messageElement.querySelector("table");
+            if (tableElement) {
+              tableName =
+                tableElement.getAttribute("data-table-name") || "data_table";
+            }
+
+            const response = await fetch(`${API_BASE_URL}/submit_feedback/`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                table_name: tableName,
+                feedback_type: feedbackType,
+                user_query: promptInput.value, // or messageContent if you prefer
+                sql_query: "", // You'll need to extract this if available
+              }),
+            });
+
+            if (!response.ok) {
+              console.error("Feedback submission failed");
+            } else {
+              const result = await response.json();
+              console.log("Feedback result:", result);
+            }
+          } catch (error) {
+            console.error("Error submitting feedback:", error);
+          }
+        }
+
+        function toggleTheme() {
+          const root = document.documentElement;
+          const isDarkTheme =
+            getComputedStyle(root)
+              .getPropertyValue("--primary-color")
+              .trim() === "#ffffff";
+
+          if (isDarkTheme) {
+            // Switch to dark theme
+            root.style.setProperty(
+              "--table-border-color",
+              "rgba(255, 255, 255, 0.1)"
+            );
+            root.style.setProperty("--text-color", "#edf3ff");
+            root.style.setProperty("--subheading-color", "#97a7ca");
+            root.style.setProperty("--placeholder-color", "#c3cdde");
+            root.style.setProperty("--primary-color", "#101623");
+            root.style.setProperty("--secondary-color", "#283045");
+            root.style.setProperty("--secondary-hover-color", "#333e58");
+            root.style.setProperty("--scrollbar-color", "#626a7f");
+            themeTogglerBtn.textContent = "light_mode";
+          } else {
+            // Switch to light theme (default)
+            root.style.setProperty(
+              "--table-border-color",
+              "rgba(0, 0, 0, 0.1)"
+            );
+            root.style.setProperty("--text-color", "#333333");
+            root.style.setProperty("--subheading-color", "#555555");
+            root.style.setProperty("--placeholder-color", "#777777");
+            root.style.setProperty("--primary-color", "#ffffff");
+            root.style.setProperty("--secondary-color", "#f0f0f0");
+            root.style.setProperty("--secondary-hover-color", "#e0e0e0");
+            root.style.setProperty("--scrollbar-color", "#cccccc");
+            themeTogglerBtn.textContent = "dark_mode";
+          }
+        }
+
+        // Initialize theme toggler button to dark mode icon (since we start in light mode)
+        themeTogglerBtn.textContent = "dark_mode";
+
         // Initial Load
         if (userSection) {
-            fetchQuestions(userSection);
-            setupEventListeners();
+          fetchQuestions(userSection);
+          setupEventListeners();
         } else {
-            displayErrorMessage("No section selected! Please log in again.");
+          displayErrorMessage("No section selected! Please log in again.");
         }
-    });
+      });
     </script>
   </body>
 </html>

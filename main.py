@@ -53,14 +53,18 @@ from io import BytesIO
 import os, csv
 import pandas as pd
 
-# # Add these imports at the top of your FastAPI file
-# from azure.core.credentials import AzureKeyCredential
-# from azure.ai.formrecognizer import DocumentAnalysisClient
-# from bill_datas import invoice_data, reciept_data, awb_data, packing_data
-# import os
-# from io import BytesIO
-# from werkzeug.utils import secure_filename
+# Add these imports at the top of your FastAPI file
+from azure.core.credentials import AzureKeyCredential
+from azure.ai.formrecognizer import DocumentAnalysisClient
+from bill_datas import invoice_data, awb_data, packing_data,renuka_data
+import os
+from io import BytesIO
+from werkzeug.utils import secure_filename
 
+
+from fastapi import FastAPI, HTTPException, Depends, status, Form
+import psycopg2
+from psycopg2 import sql
 
 from langchain.chains.openai_tools import create_extraction_chain_pydantic
 from langchain_core.pydantic_v1 import Field
@@ -87,6 +91,10 @@ AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 
 app = FastAPI()
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Set up static files and templates
 app.mount("/stats", StaticFiles(directory="stats"), name="stats")
 templates = Jinja2Templates(directory="templates")
@@ -95,6 +103,8 @@ templates = Jinja2Templates(directory="templates")
 
 question_dropdown = os.getenv('Question_dropdown')
 llm = ChatOpenAI(model=models, temperature=0)  # Adjust model as necessary
+openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
 from table_details import get_table_details  # Importing the function
 
 class Table(BaseModel):
@@ -115,47 +125,10 @@ except Exception as e:
     raise  # Re-raise the exception to prevent the app from starting
 
 
-# Set up static files and templates
-app.mount("/stats", StaticFiles(directory="stats"), name="stats")
-templates = Jinja2Templates(directory="templates")
-
-# Initialize OpenAI API key and model
-
-
-
-llm = ChatOpenAI(model='gpt-4o-mini', temperature=0)  # Adjust model as necessary
-openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
-
-from table_details import get_table_details  # Importing the function
-
-class Table(BaseModel):
-    """Table in SQL database."""
-    name: str = Field(description="Name of table in SQL database.")
-
-
-@app.get("/", response_class=HTMLResponse)
-async def read_root(request: Request):
-
-    # Extract table names dynamically
-    tables = []
-
-    # Pass dynamically populated dropdown options to the template
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "models": models,
-        "databases": databases,  # Dynamically populated database dropdown
-        "section": subject_areas2,
-        "tables": tables,        # Table dropdown based on database selection
-        "question_dropdown": question_dropdown.split(','),  # Static questions from env
-    })
 
 
 
 
-
-from fastapi import FastAPI, HTTPException, Depends, status, Form
-import psycopg2
-from psycopg2 import sql
 class ChartRequest(BaseModel):
     """
     Pydantic model for chart generation requests.
@@ -189,7 +162,8 @@ def get_db_connection():
             host=db_host,
             database=db_database,
             user=db_user,
-            password=db_password
+            password=db_password,
+            port=db_port
         )
         # Check if the connection is successful
         conn.cursor().execute("SELECT 1")
@@ -360,6 +334,7 @@ async def query_temp_docs(
     result = await temp_doc_handler.query_index(question)
 
     return JSONResponse(result)
+
 class QueryInput(BaseModel):
     """
     Pydantic model for user query input.
@@ -372,41 +347,52 @@ async def clear_temp_docs():
     temp_doc_handler.uploaded_files = []
     return JSONResponse({"status": "success", "message": "Temporary documents cleared"})
 
-# from datetime import datetime
+from datetime import datetime
 
-# # Database connection
-# def get_connection():
-#     return psycopg2.connect(
-#         dbname="postgres",
-#         user="postgres",
-#         password="Satya@2002",
-#         host="localhost",
-#         port="5432"
-#     )
+# Database connection
+def get_connection():
+    return psycopg2.connect(
+        dbname="postgres",
+        user="postgres",
+        password="Satya@2002",
+        host="localhost",
+        port="5432"
+    )
 
-# # Define the expected keys (mapping incoming camel/pascal to snake_case)
-# FIELD_MAP = {
-#     "Shipping Address": "shipping_address",
-#     "Consignee Name": "consignee_name",
-#     "Shipper Name": "shipper_name",
-#     "Consignee Address": "consignee_address",
-#     "Airway Bill Number": "airway_bill_number",
-#     "Issuer": "issuer",
-#     "Total Weight": "total_weight",
-#     "Execution Date": "execution_date",
-#     "Total Bill": "total_bill",
-#     "Currency": "currency",
-#     "Departure Airport": "departure_airport",
-#     "Destination Airport": "destination_airport",
-#     "Shipper Account Number": "shipper_account_number"
-# }
+# def try_multiple_formats(date_str):
+#     date_formats = [
+#         "%d/%m/%Y",
+#         "%d-%m-%Y",
+#         "%Y-%m-%d",
+#         "%d-%b-%Y",
+#         "%d-%b-%y",      # ✅ Supports 6-May-25
+#         "%b %d, %Y",
+#         "%d %B %Y",
+#         "%d.%m.%Y",
+#     ]
+#     for fmt in date_formats:
+#         try:
+#             return datetime.strptime(date_str.strip(), fmt).date()
+#         except ValueError:
+#             continue
+#     raise ValueError(f"Unrecognized date format: {date_str}")
 
-# @app.post("/insert_shipments")
-# async def insert_shipments(request: Request):
+app = FastAPI()
+
+FIELD_MAP = {
+    "Invoice Number": "invoice_number",
+    "Invoice Date": "invoice_date",
+    "Vendor Name": "vendor_name",
+    "Description": "description",
+    "Total Amount (In Ruppees)": "total_amount",
+    "GSTIN": "gstin"
+}
+
+# @app.post("/insert_invoices")
+# async def insert_invoices(request: Request):
 #     try:
 #         data = await request.json()
 
-#         # Normalize and insert
 #         conn = get_connection()
 #         cur = conn.cursor()
 
@@ -417,52 +403,40 @@ async def clear_temp_docs():
 #                 if mapped_key:
 #                     row[mapped_key] = value
 
-#             # Format the date
-#             execution_date = None
-#             if "execution_date" in row:
+#             # ✅ Handle flexible date formats
+#             invoice_date = None
+#             if "invoice_date" in row and row["invoice_date"]:
 #                 try:
-#                     execution_date = datetime.strptime(row["execution_date"], "%d-%b-%Y").date()
-#                 except ValueError:
-#                     raise HTTPException(status_code=400, detail="Invalid date format. Expected dd-MMM-yyyy")
+#                     invoice_date = try_multiple_formats(row["invoice_date"])
+#                 except ValueError as e:
+#                     raise HTTPException(status_code=400, detail=str(e))
 
+#             # ✅ Insert data
 #             cur.execute("""
-#                 INSERT INTO shipments (
-#                     shipping_address,
-#                     consignee_name,
-#                     shipper_name,
-#                     consignee_address,
-#                     airway_bill_number,
-#                     issuer,
-#                     total_weight,
-#                     execution_date,
-#                     total_bill,
-#                     currency,
-#                     departure_airport,
-#                     destination_airport,
-#                     shipper_account_number
-#                 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-#                 ON CONFLICT (airway_bill_number) DO NOTHING;
+#                 INSERT INTO Renuka_POC (
+#                     invoice_number,
+#                     invoice_date,
+#                     vendor_name,
+#                     description,
+#                     total_amount,
+#                     gstin
+#                 ) VALUES (%s, %s, %s, %s, %s, %s)
+#                 ON CONFLICT (invoice_number) DO NOTHING;
 #             """, (
-#                 row.get("shipping_address"),
-#                 row.get("consignee_name"),
-#                 row.get("shipper_name"),
-#                 row.get("consignee_address"),
-#                 row.get("airway_bill_number"),
-#                 row.get("issuer"),
-#                 float(row.get("total_weight", 0)),
-#                 execution_date,
-#                 float(row.get("total_bill", 0)),
-#                 row.get("currency"),
-#                 row.get("departure_airport"),
-#                 row.get("destination_airport"),
-#                 row.get("shipper_account_number")
+#                 row.get("invoice_number"),
+#                 invoice_date,
+#                 row.get("vendor_name"),
+#                 row.get("description"),
+#                 float(row.get("total_amount", "0").replace(",", "").strip()) if row.get("total_amount") else None,
+
+#                 row.get("gstin")
 #             ))
 
 #         conn.commit()
 #         cur.close()
 #         conn.close()
 
-#         return {"message": "Data inserted successfully!"}
+#         return {"message": "Invoice data inserted successfully!"}
 
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
@@ -510,7 +484,21 @@ async def add_to_faqs(
             status_code=500,
             detail=f"Error saving question: {str(e)}"
         )
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
 
+    # Extract table names dynamically
+    tables = []
+
+    # Pass dynamically populated dropdown options to the template
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "models": models,
+        "databases": databases,  # Dynamically populated database dropdown
+        "section": subject_areas2,
+        "tables": tables,        # Table dropdown based on database selection
+        "question_dropdown": question_dropdown.split(','),  # Static questions from env
+    })
 # Login endpoint
 @app.post("/login")
 async def login(
@@ -611,6 +599,13 @@ def generate_chart_figure(data_df: pd.DataFrame, x_axis: str, y_axis: str, chart
         fig = px.funnel(data_df, x=x_axis, y=y_axis)
     return fig
 
+# @app.get("/", response_class=HTMLResponse)
+# async def user_page(request: Request):
+#     return templates.TemplateResponse("index.html", {"request": request})
+
+
+
+
 @app.post("/generate-chart/")
 async def generate_chart(request: ChartRequest):
     """
@@ -686,6 +681,7 @@ async def user_page(request: Request):
 @app.get("/authentication", response_class=HTMLResponse)
 async def user_page(request: Request):
     return templates.TemplateResponse("authentication.html", {"request": request})
+
 
 @app.get("/user_more", response_class=HTMLResponse)
 async def user_more(request: Request):
@@ -1414,15 +1410,12 @@ def extract_follow_ups(message_content):
                 if clean_query:
                     key = f'follow_up_{i}'
                     follow_ups[key] = clean_query
-        # Limit to maximum 3 follow-ups
-        if len(follow_ups) > 3:
-            follow_ups = dict(list(follow_ups.items())[:3])           
 
     except Exception as e:
         print(f"Error extracting follow-ups: {e}")
 
     return follow_ups
-    
+
 async def use_llamaparse(file_content, file_name):
     try:
         with open(file_name, "wb") as f:
@@ -1602,17 +1595,19 @@ async def delete_document(request: Request,
         return JSONResponse({"status": "error", "message": "Error deleting document."})
 
 
-# # Add this configuration near your other app configurations
-# UPLOAD_FOLDER = 'uploads'
-# if not os.path.exists(UPLOAD_FOLDER):
-#     os.makedirs(UPLOAD_FOLDER)
+# Add this configuration near your other app configurations
+UPLOAD_FOLDER = 'uploads'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
-# # Initialize Azure Form Recognizer client
-# endpoint = os.environ.get('endpoint')
-# key = os.environ.get('key')
-# document_analysis_client = DocumentAnalysisClient(
-#     endpoint=endpoint, credential=AzureKeyCredential(key)
-# )
+# Initialize Azure Form Recognizer client
+endpoint = os.environ.get('endpoint')
+key = os.environ.get('key')
+document_analysis_client = DocumentAnalysisClient(
+    endpoint=endpoint, credential=AzureKeyCredential(key)
+)
+
+
 # # Add this route to your FastAPI app
 # @app.post("/process-document", response_class=HTMLResponse)
 # async def process_document(
@@ -1626,6 +1621,8 @@ async def delete_document(request: Request,
 #         # Determine the poller method based on service
 #         if service == 'Invoices':
 #             poller_method = 'prebuilt-invoice'
+#         elif service == 'Renuka POC':
+#             poller_method = 'Renuka'
 #         elif service == 'Receipts':
 #             poller_method = 'prebuilt-receipt'
 #         elif service == 'AWB':
@@ -1645,7 +1642,6 @@ async def delete_document(request: Request,
 #             # Save the file temporarily
 #             with open(file_path, "wb") as f:
 #                 f.write(await file.read())
-
 #             with open(file_path, "rb") as fh:
 #                 file_buf = BytesIO(fh.read())
 
@@ -1664,6 +1660,8 @@ async def delete_document(request: Request,
 #         # Process results based on document type
 #         if poller_method == 'prebuilt-invoice':
 #             results = invoice_data(results, bill_data)
+#         elif poller_method == 'Renuka':
+#             results = renuka_data(results, bill_data)
 #         elif poller_method == 'prebuilt-receipt':
 #             results = reciept_data(results, bill_data)
 #         elif poller_method == 'finance_insight':
@@ -1684,3 +1682,536 @@ async def delete_document(request: Request,
 
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
+@app.post("/process-document", response_class=HTMLResponse)
+async def process_document(
+    request: Request,
+    service: str = Form(...),
+    input_method: str = Form(...),
+    files: List[UploadFile] = File(None),  # Changed from single file to list
+    bill_url: str = Form(None)
+):
+    try:
+        # Determine the poller method based on service
+        if service == 'Invoices':
+            poller_method = 'prebuilt-invoice'
+        elif service == 'Renuka POC':
+            poller_method = 'Renuka'
+        elif service == 'Receipts':
+            poller_method = 'prebuilt-receipt'
+        elif service == 'AWB':
+            poller_method = 'finance_insight'
+        elif service == 'Packing Slip':
+            poller_method = 'packing_slip'
+        elif service == 'COMPOSED':
+            poller_method = 'composed_model'
+        else:
+            raise HTTPException(status_code=400, detail="Invalid service type")
+
+        all_results = []  # To store results from all files
+
+        # Process based on input method
+        if input_method == 'file' and files:
+            for file in files:
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(UPLOAD_FOLDER, filename)
+
+                # Save the file temporarily
+                with open(file_path, "wb") as f:
+                    f.write(await file.read())
+                with open(file_path, "rb") as fh:
+                    file_buf = BytesIO(fh.read())
+
+                poller = document_analysis_client.begin_analyze_document(poller_method, file_buf)
+                os.remove(file_path)  # Clean up the temporary file
+
+                # Get results for this file
+                bill_data = poller.result()
+                results = []
+
+                # Process results based on document type
+                if poller_method == 'prebuilt-invoice':
+                    results = invoice_data(results, bill_data)
+                elif poller_method == 'Renuka':
+                    results = renuka_data(results, bill_data)
+                elif poller_method == 'prebuilt-receipt':
+                    results = reciept_data(results, bill_data)
+                elif poller_method == 'finance_insight':
+                    results = awb_data(results, bill_data)
+                elif poller_method == 'packing_slip':
+                    results = packing_data(results, bill_data)
+                elif poller_method == 'composed_model':
+                    for idx, doc in enumerate(bill_data.documents):
+                        doc_type = doc.doc_type
+                        if doc_type == "composed_model:finance_insight":
+                            results = awb_data(results, bill_data)
+                        elif doc_type == "composed_model:packing_slip":
+                            results = packing_data(results, bill_data)
+
+                all_results.append({
+                    "filename": filename,
+                    "results": results
+                })
+
+        elif input_method == 'url' and bill_url:
+            poller = document_analysis_client.begin_analyze_document_from_url(poller_method, bill_url)
+            bill_data = poller.result()
+            results = []
+
+            # Process results based on document type (same as above)
+            if poller_method == 'prebuilt-invoice':
+                results = invoice_data(results, bill_data)
+            elif poller_method == 'Renuka':
+                results = renuka_data(results, bill_data)
+            elif poller_method == 'prebuilt-receipt':
+                results = reciept_data(results, bill_data)
+            elif poller_method == 'finance_insight':
+                results = awb_data(results, bill_data)
+            elif poller_method == 'packing_slip':
+                results = packing_data(results, bill_data)
+            elif poller_method == 'composed_model':
+                for idx, doc in enumerate(bill_data.documents):
+                    doc_type = doc.doc_type
+                    if doc_type == "composed_model:finance_insight":
+                        results = awb_data(results, bill_data)
+                    elif doc_type == "composed_model:packing_slip":
+                        results = packing_data(results, bill_data)
+
+            all_results.append({
+                "url": bill_url,
+                "results": results
+            })
+        else:
+            raise HTTPException(status_code=400, detail="Invalid input method or missing data")
+
+        # print("All Results:", all_results)
+        return JSONResponse(content=all_results)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
+
+# FIELD_MAP = {
+#     "Invoice Number": "invoice_number",
+#     "Invoice Date": "invoice_date",
+#     "Vendor Name": "vendor_name",
+#     "Description": "description",
+#     "Total Amount (In Ruppees)": "total_amount",
+#     "GSTIN": "gstin"
+# }
+
+# @app.post("/insert_invoices")
+# async def insert_invoices(request: Request):
+#     try:
+#         data = await request.json()
+
+#         def extract_numeric(value):
+#             """Extracts the first float-like number from a string like '4 Nos' or '3.5 hrs'."""
+#             if not value or not value.strip():
+#                 return 0.0
+#             match = re.search(r"\d+(\.\d+)?", value.replace(",", ""))
+#             return float(match.group()) if match else 0.0
+
+#         def safe_cast(value):
+#             if not value or not str(value).strip():
+#                 return 0.0
+#             # Remove anything that is not a digit or decimal point
+#             cleaned = re.sub(r"[^\d.]+", "", value)
+#             try:
+#                 return float(cleaned)
+#             except ValueError:
+#                 return 0.0
+
+
+#         def safe_number_extract(value):
+#             if not value or not str(value).strip():
+#                 return 0
+#             # Remove commas, slashes, hyphens, and non-numeric symbols
+#             cleaned = re.sub(r"[^\d.]+", "", value)
+#             return float(cleaned) if cleaned else 0
+
+#         def preprocess_item(item):
+#             """Preprocess item according to requirements:
+#             - Remove if description is null/empty
+#             - Fill 0 for null values in other columns
+#             """
+#             if not item.get("description"):
+#                 return None
+
+#             processed = {
+#                 "description": item.get("description"),
+#                 "qty": safe_number_extract(item.get("qty")),
+#                 "weight": safe_number_extract(item.get("weight")),
+#                 "rate": safe_cast(item.get("rate")),
+#                 "amount": safe_cast(item.get("amount")),
+#                 "total_amount": safe_cast(row.get("total_amount"))
+
+#             }
+#             return processed
+
+#         conn = get_connection()
+#         cur = conn.cursor()
+
+#         for entry in data:
+#             row = {}
+#             raw_items = entry.get("items", [])
+
+#             # ✅ Preprocess items - filter and fill nulls
+#             items = []
+#             for item in raw_items:
+#                 processed = preprocess_item(item)
+#                 if processed:
+#                     items.append(processed)
+
+#             for key, value in entry.items():
+#                 if key == "items":
+#                     continue
+#                 mapped_key = FIELD_MAP.get(key)
+#                 if mapped_key:
+#                     row[mapped_key] = value
+
+#             # ✅ Date conversion
+#             invoice_date = None
+#             if "invoice_date" in row and row["invoice_date"]:
+#                 try:
+#                     raw_date = row["invoice_date"].replace(" ", "")  # 🧹 Clean extra spaces
+
+#                     invoice_date = try_multiple_formats(raw_date)
+#                 except ValueError as e:
+#                     raise HTTPException(status_code=400, detail=str(e))
+
+#             # ✅ Insert into invoices (master)
+#             cur.execute("""
+#                 INSERT INTO invoices (
+#                     invoice_number,
+#                     invoice_date,
+#                     vendor_name,
+#                     gstin,
+#                     total_amount
+#                 ) VALUES (%s, %s, %s, %s, %s)
+#                 ON CONFLICT (invoice_number) DO NOTHING
+#                 RETURNING id;
+#             """, (
+#                 row.get("invoice_number"),
+#                 invoice_date,
+#                 row.get("vendor_name"),
+#                 row.get("gstin"),
+#                 float(row.get("total_amount", "0").replace(",", "").strip()) if row.get("total_amount") else None
+#             ))
+
+#             result = cur.fetchone()
+#             if result:
+#                 invoice_id = result[0]
+#             else:
+#                 cur.execute("SELECT id FROM invoices WHERE invoice_number = %s", (row.get("invoice_number"),))
+#                 invoice_id = cur.fetchone()[0]
+
+#             # ✅ Insert into invoice_items (child table)
+#             for item in items:
+#                 cur.execute("""
+#                     INSERT INTO invoice_items (
+#                         invoice_id,
+#                         description_of_goods,
+#                         quantity,
+#                         weight,
+#                         rate,
+#                         amount
+#                     ) VALUES (%s, %s, %s, %s, %s, %s);
+#                 """, (
+#                     invoice_id,
+#                     item["description"],  # Guaranteed to exist due to preprocessing
+#                     item["qty"],         # Guaranteed to be 0 if null
+#                     item["weight"],      # Guaranteed to be 0 if null
+#                     item["rate"],        # Guaranteed to be 0 if null
+#                     item["amount"]       # Guaranteed to be 0 if null
+#                 ))
+
+#         conn.commit()
+#         cur.close()
+#         conn.close()
+
+#         return {"message": "Invoice data and items inserted successfully!"}
+
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+
+def clean_date_string(date_str):
+    """Clean date string by removing spaces around separators"""
+    if not date_str:
+        return ""
+    date_str = str(date_str).strip()
+    # Remove spaces around date separators
+    date_str = re.sub(r'\s*([/.-])\s*', r'\1', date_str)
+
+    # Remove any trailing non-digit characters (like hyphens, slashes, etc.)
+    date_str = re.sub(r'[^0-9]+$', '', date_str)
+    
+    return date_str
+
+# def parse_date(date_str):
+#     """Robust date parser that handles messy formats including spaces"""
+#     if not date_str:
+#         return None
+
+
+#     cleaned_date = clean_date_string(date_str)
+
+#     # List of possible date formats to try (order matters!)
+#     formats = [
+#         "%d/%m/%Y",    # 06/05/2025
+#         "%d-%m-%Y",    # 06-05-2025
+#         "%d.%m.%Y",    # 06.05.2025
+#         "%Y-%m-%d",    # 2025-05-06 (ISO)
+#         "%d/%m/%y",    # 06/05/25
+#         "%d-%b-%y",    # 06-May-25
+#         "%b %d, %Y",   # May 06, 2025
+#     ]
+
+#     for fmt in formats:
+#         try:
+#             return datetime.strptime(cleaned_date, fmt).date()
+#         except ValueError:
+#             continue
+
+#     raise ValueError(f"Unrecognized date format: '{date_str}'. Cleaned: {date_str}")
+def parse_date(date_str):
+    try:
+        # Handle date format like '6-May-25'
+        return datetime.strptime(date_str, "%d-%b-%y")
+    except ValueError as e:
+        logger.error(f"Date parsing error for '{date_str}': {e}")
+        raise ValueError(f"Unsupported date format: {date_str} - {str(e)}")
+
+def safe_text(value):
+    """Returns 'NA' if value is None or empty string"""
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return "NA"
+    return value
+
+@app.post("/insert_invoices")
+async def insert_invoices(request: Request):
+    conn = None
+    cur = None
+
+    # Define field mappings
+    FIELD_MAP = {
+        "Invoice ID": "invoice_id",
+        "Invoice Number": "invoice_number",
+        "Invoice Date": "invoice_date",
+        "Vendor Name": "vendor_name",
+        "Invoice Total": "invoice_total",
+        "Vendor Address": "vendor_address",
+        "Vendor Address Recipient": "vendor_address_recipient",
+        "Customer Name": "customer_name",
+        "Purchase Order": "purchase_order",
+        "Billing Address": "billing_address",
+        "Billing Address Recipient": "billing_address_recipient",
+        "Subtotal": "subtotal",
+        "Total Tax": "total_tax",
+        "Customer Address": "customer_address",
+        "Customer Address Recipient": "customer_address_recipient",
+        "Shipping Address": "shipping_address",
+        "Shipping Address Recipient": "shipping_address_recipient",
+        "Due Date": "due_date",
+        "Amount Due": "amount_due",
+        "Service Start Date": "service_start_date",
+        "Service End Date": "service_end_date",
+        "Customer ID": "customer_id"
+    }
+
+    def safe_text(value):
+        """Convert None to 'NA' for text fields"""
+        return "NA" if value is None else str(value).strip()
+
+    def parse_date_safe(date_value):
+        """Safely parse date from string or return None"""
+        if date_value is None:
+            return None
+        if isinstance(date_value, datetime):
+            return date_value.date()
+        try:
+            # Handle string dates
+            if isinstance(date_value, str):
+                return parse_date(date_value).date()
+            return None
+        except:
+            return None
+
+    try:
+        data = await request.json()
+        logger.info(f"Data received for insertion: {data}")
+
+        def clean_numeric(value):
+            """Robust cleaning of numeric values"""
+            if value is None:
+                return 0.0
+            if isinstance(value, (int, float)):
+                return float(value)
+
+            str_value = str(value).strip()
+            if not str_value:
+                return 0.0
+
+            # Handle currency symbols and thousand separators
+            cleaned = re.sub(r"[^\d.]", "", str_value.replace('₹', '').strip())
+            if "/" in str_value:
+                cleaned = cleaned.split("/")[0]
+
+            try:
+                return float(cleaned) if cleaned else 0.0
+            except ValueError as e:
+                logger.warning(f"Could not convert '{value}' to float: {e}")
+                return 0.0
+
+        def preprocess_item(item):
+            """Process invoice items with proper field mapping"""
+            if not item.get("description"):
+                logger.warning("Item missing description")
+                return None
+
+            return {
+                "item_name": item.get("item_name", ""),
+                "description": item["description"],
+                "product_code": item.get("product_code", ""),
+                "quantity": clean_numeric(item.get("quantity")),
+                "unit_price": clean_numeric(item.get("unit_price")),
+                "amount": clean_numeric(item.get("amount"))
+            }
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        for entry in data:
+            try:
+                # Map fields using FIELD_MAP
+                row = {}
+                items = [preprocess_item(i) for i in entry.get("items", []) if preprocess_item(i)]
+
+                for key, value in entry.items():
+                    if key == "items":
+                        continue
+                    if mapped_key := FIELD_MAP.get(key):
+                        if mapped_key in ["invoice_total", "subtotal", "total_tax", "amount_due"]:
+                            row[mapped_key] = clean_numeric(value)
+                        elif mapped_key.endswith("_date"):
+                            row[mapped_key] = parse_date_safe(value)
+                        else:
+                            row[mapped_key] = safe_text(value)
+
+                # Determine invoice ID (fallback to invoice number if needed)
+                invoice_id = row.get("invoice_id") or row.get("invoice_number")
+                if not invoice_id:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Missing both Invoice ID and Invoice Number"
+                    )
+
+                # Insert invoice
+                cur.execute("""
+                    INSERT INTO invoice(
+                        invoice_id,
+                        invoice_date,
+                        vendor_name,
+                        invoice_total,
+                        vendor_address,
+                        vendor_address_recipient,
+                        customer_name,
+                        purchase_order,
+                        billing_address,
+                        billing_address_recipient,
+                        subtotal,
+                        total_tax,
+                        customer_address,
+                        customer_address_recipient,
+                        shipping_address,
+                        shipping_address_recipient,
+                        due_date,
+                        amount_due,
+                        service_start_date,
+                        service_end_date,
+                        customer_id
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (invoice_id) DO NOTHING
+                    RETURNING invoice_id;
+                """, (
+                    invoice_id,
+                    row.get("invoice_date"),
+                    safe_text(row.get("vendor_name")),
+                    row.get("invoice_total", 0.0),
+                    safe_text(row.get("vendor_address")),
+                    safe_text(row.get("vendor_address_recipient")),
+                    safe_text(row.get("customer_name")),
+                    safe_text(row.get("purchase_order")),
+                    safe_text(row.get("billing_address")),
+                    safe_text(row.get("billing_address_recipient")),
+                    row.get("subtotal", 0.0),
+                    row.get("total_tax", 0.0),
+                    safe_text(row.get("customer_address")),
+                    safe_text(row.get("customer_address_recipient")),
+                    safe_text(row.get("shipping_address")),
+                    safe_text(row.get("shipping_address_recipient")),
+                    row.get("due_date"),
+                    row.get("amount_due", 0.0),
+                    row.get("service_start_date"),
+                    row.get("service_end_date"),
+                    safe_text(row.get("customer_id"))
+                ))
+
+                # If no rows were inserted (due to conflict), fetch existing ID
+                if not cur.fetchone():
+                    cur.execute("SELECT invoice_id FROM invoice WHERE invoice_id = %s", (invoice_id,))
+                    if not (result := cur.fetchone()):
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"Failed to insert or retrieve invoice {invoice_id}"
+                        )
+
+                # Insert items
+                for item in items:
+                    cur.execute("""
+                        INSERT INTO invoice_item_list (
+                            invoice_id,
+                            item_name,
+                            description,
+                            product_code,
+                            quantity,
+                            unit_price,
+                            amount
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s);
+                    """, (
+                        invoice_id,
+                        item["item_name"],
+                        item["description"],
+                        item["product_code"],
+                        item["quantity"],
+                        item["unit_price"],
+                        item["amount"]
+                    ))
+
+                logger.info(f"Successfully processed invoice {invoice_id}")
+
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.error(f"Error processing invoice: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Error processing invoice: {str(e)}"
+                )
+
+        conn.commit()
+        return {"message": f"Successfully processed {len(data)} invoices"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Server error: {str(e)}"
+        )
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()

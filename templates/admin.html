@@ -539,11 +539,11 @@
             .dashboard {
                 grid-template-columns: 1fr;
             }
-            
+
             .sidebar {
                 display: none;
             }
-            
+
             .card-grid {
                 grid-template-columns: 1fr;
             }
@@ -606,38 +606,38 @@
                 </div>
                 <span class="logo-text">InsightAgent.ai</span>
             </div>
-            
+
             <nav class="nav-menu">
                 <a href="#" class="nav-item active" id="dashboard-link">
                     <i class="fas fa-tachometer-alt"></i>
                     Logs
                 </a>
-              
+
             </nav>
         </aside>
-        
+
         <!-- Main Content Area -->
         <main class="main-content">
 
-        
+
             <div class="header">
                 <h1 class="welcome-title">Welcome back! </h1>
-                
+
                 <!-- Right-side controls -->
                 <div class="header-controls">
                     <a href="javascript:history.back()" class="back-button" title="Go Back">
                         <i class="fas fa-arrow-left"></i> Back
                     </a>
-                    
-                    
+
+
                     <button class="theme-toggle" id="theme-toggle">
                         <i class="fas fa-moon"></i>
                     </button>
                 </div>
             </div>
-            
-            
-            
+
+
+
             <!-- Action Cards -->
             <div class="card-grid">
                 <div class="card">
@@ -655,7 +655,7 @@
                         View Documents
                     </button>
                 </div>
-                
+
                 <div class="card">
                     <div class="card-header">
                         <div class="card-icon">
@@ -671,7 +671,7 @@
                         Upload Files
                     </button>
                 </div>
-                
+
                 <div class="card">
                     <div class="card-header">
                         <div class="card-icon">
@@ -687,7 +687,7 @@
                         Delete Documents
                     </button>
                 </div>
-                
+
                 <div class="card">
                     <div class="card-header">
                         <div class="card-icon">
@@ -704,7 +704,7 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- Content Sections -->
             <div class="content-section" id="show-documents-section">
                 <div class="section-header">
@@ -720,7 +720,7 @@
                     <!-- Documents will be loaded here -->
                 </div>
             </div>
-            
+
             <div class="content-section" id="upload-section">
                 <div class="section-header">
                     <h2 class="section-title">
@@ -754,7 +754,7 @@
                 </div>
                 <div id="upload-result"></div>
             </div>
-            
+
             <div class="content-section" id="delete-section">
                 <div class="section-header">
                     <h2 class="section-title">
@@ -781,7 +781,7 @@
                 </div>
                 <div id="delete-result"></div>
             </div>
-            
+
             <div class="content-section" id="get-tables-section">
                 <div class="section-header">
                     <h2 class="section-title">
@@ -808,14 +808,14 @@
             const themeToggle = document.getElementById('theme-toggle');
             const themeIcon = themeToggle.querySelector('i');
             const savedTheme = localStorage.getItem('theme') || 'light';
-            
+
             document.body.setAttribute('data-theme', savedTheme);
             themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
 
             themeToggle.addEventListener('click', () => {
                 const currentTheme = document.body.getAttribute('data-theme');
                 const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                
+
                 document.body.setAttribute('data-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
                 themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
@@ -824,11 +824,11 @@
             // File upload handling
             const fileUpload = document.getElementById('file-upload');
             const selectedFilesContainer = document.getElementById('selected-files-container');
-            
+
             fileUpload.addEventListener('change', (e) => {
                 const files = Array.from(e.target.files);
                 selectedFilesContainer.innerHTML = '';
-                
+
                 if (files.length > 0) {
                     files.forEach(file => {
                         const fileElement = document.createElement('div');
@@ -857,26 +857,27 @@
             const getTablesBtn = document.getElementById('get-tables-btn');
             const actualUploadBtn = document.getElementById('actual-upload-btn');
             const actualDeleteBtn = document.getElementById('actual-delete-btn');
-            
+
+            // Content sections
             const showSection = document.getElementById('show-documents-section');
             const deleteSection = document.getElementById('delete-section');
             const uploadSection = document.getElementById('upload-section');
             const getTablesSection = document.getElementById('get-tables-section');
-            
+
             const closeDocumentsBtn = document.getElementById('close-documents');
             const closeUploadBtn = document.getElementById('close-upload');
             const closeDeleteBtn = document.getElementById('close-delete');
             const closeTablesBtn = document.getElementById('close-tables');
             const cancelUploadBtn = document.getElementById('cancel-upload');
             const cancelDeleteBtn = document.getElementById('cancel-delete');
-            
+
             const documentsList = document.getElementById('documents-list');
             const tablesListDiv = document.getElementById('tables-list');
             const deleteResultDiv = document.getElementById('delete-result');
             const uploadResultDiv = document.getElementById('upload-result');
             const docToDeleteSelect = document.getElementById('doc-to-delete');
-            
-            const name = urlParams.get('name') || 'Admin';  
+
+            const name = urlParams.get('name') || 'Admin';
             const section = urlParams.get('section') || '';
 
             document.querySelector('.welcome-title').textContent = `Welcome back! ${decodeURIComponent(name)}`;
@@ -948,8 +949,8 @@
            // Handle File Upload
 actualUploadBtn.addEventListener('click', async () => {
     const files = fileUpload.files;
-    const allowedTypes = ['application/pdf', 
-                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
+    const allowedTypes = ['application/pdf',
+                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
                          'text/plain',
                          'text/html',
@@ -977,14 +978,14 @@ actualUploadBtn.addEventListener('click', async () => {
             invalidFiles.push(`${file.name} (too large - max 100MB)`);
             continue;
         }
-        
+
         // Check file extension
         const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
         if (!allowedExtensions.includes(fileExt)) {
             invalidFiles.push(`${file.name} (invalid type)`);
             continue;
         }
-        
+
         // Check MIME type (additional check)
         if (!allowedTypes.includes(file.type) )
         {
@@ -1006,7 +1007,7 @@ actualUploadBtn.addEventListener('click', async () => {
 
     const formData = new FormData();
     formData.append('section', selectedSection);
-    
+
     for (const file of files) {
         formData.append('files', file);
     }
@@ -1020,11 +1021,11 @@ actualUploadBtn.addEventListener('click', async () => {
             method: 'POST',
             body: formData
         });
-        
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         uploadResultDiv.innerHTML = `
             <div class="success-message">
@@ -1059,7 +1060,7 @@ actualUploadBtn.addEventListener('click', async () => {
                 })
                 .then(data => {
                     docToDeleteSelect.innerHTML = '';
-                    
+
                     if (data.length === 0) {
                         docToDeleteSelect.innerHTML = '<option>No documents available</option>';
                         actualDeleteBtn.disabled = true;
@@ -1084,27 +1085,27 @@ actualUploadBtn.addEventListener('click', async () => {
             actualDeleteBtn.addEventListener('click', async () => {
                 const docName = docToDeleteSelect.value;
                 if (!docName || docName === 'No documents available') return;
-                
+
                 actualDeleteBtn.innerHTML = '<span class="loading-spinner"></span> Deleting...';
                 actualDeleteBtn.disabled = true;
-                
+
                 try {
                     const data = await fetchData('/delete_document', 'POST', `section=${selectedSection}&doc_name=${docName}`, {
                         'Content-Type': 'application/x-www-form-urlencoded'
                     });
-                    
+
                     deleteResultDiv.innerHTML = `
                         <div class="success-message">
                             <i class="fas fa-check-circle"></i>
                             ${data.message || 'Document deleted successfully'}
                         </div>
                     `;
-                    
+
                     // Refresh the document list
                     const newData = await fetchData('/show_documents', 'POST', `section=${selectedSection}`, {
                         'Content-Type': 'application/x-www-form-urlencoded'
                     });
-                    
+
                     docToDeleteSelect.innerHTML = '';
                     if (newData.length > 0) {
                         newData.forEach(doc => {
@@ -1135,7 +1136,7 @@ actualUploadBtn.addEventListener('click', async () => {
                 hideSections();
                 getTablesSection.classList.add('active');
                 tablesListDiv.innerHTML = '<div class="loading-spinner"></div>';
-                
+
                 try {
                     const data = await fetchData(`/get-tables/?selected_section=${selectedSection}`);
                     tablesListDiv.innerHTML = '';
@@ -1203,26 +1204,26 @@ actualUploadBtn.addEventListener('click', async () => {
 
             // Initial setup
             hideSections();
-            
+
             // Drag and drop functionality
             const uploadContainer = document.querySelector('.file-upload-container');
-            
+
             uploadContainer.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 uploadContainer.style.borderColor = 'var(--accent-color)';
                 uploadContainer.style.backgroundColor = 'rgba(79, 70, 229, 0.1)';
             });
-            
+
             uploadContainer.addEventListener('dragleave', () => {
                 uploadContainer.style.borderColor = 'var(--border-color)';
                 uploadContainer.style.backgroundColor = '';
             });
-            
+
             uploadContainer.addEventListener('drop', (e) => {
                 e.preventDefault();
                 uploadContainer.style.borderColor = 'var(--border-color)';
                 uploadContainer.style.backgroundColor = '';
-                
+
                 if (e.dataTransfer.files.length) {
                     fileUpload.files = e.dataTransfer.files;
                     const event = new Event('change');

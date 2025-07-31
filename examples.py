@@ -5,14 +5,14 @@
 # Application Name: DBQUERY_NEW.AI
 #
 # Change Details:
-# Version No:     Date:        Changed by     Changes Done         
+# Version No:     Date:        Changed by     Changes Done
 # 01             25-Jun-2024   Krushna B.     Initial Creation
-# 02             04-Jul-2024   Krushna B.     Added logic for data visualization 
+# 02             04-Jul-2024   Krushna B.     Added logic for data visualization
 # 03             15-Jul-2024   Krushna B.     Added more examples for the model to work more finely
 # 04             25-Jul-2024   Krushna B.     Added new departments - Insurance and Legal
 # 05             13-Aug-2024   Krushna B.     Added logic for Speech to Text
-# 06             20-Aug-2024   Krushna B.     Changed Manufacturing to Inventory and added more tables inside it  
-# 07             19-Sep-2024   Krushna B.     In table_details and newlangchain_utils the prompts have been updated         
+# 06             20-Aug-2024   Krushna B.     Changed Manufacturing to Inventory and added more tables inside it
+# 07             19-Sep-2024   Krushna B.     In table_details and newlangchain_utils the prompts have been updated
 # **********************************************************************************************#
 
 examples = [
@@ -177,7 +177,7 @@ examples = [
         "Columns: cost_id, item_id, cost_amount, effective_date",
         "Description: This table contains details of item costs, allowing filtering by effective date."
     ])
-}, 
+},
     {
     "input": "get average item cost amount",
     "query": "SELECT AVG(cost_amount) AS average_cost FROM lz_item_costs",
