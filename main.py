@@ -7,7 +7,7 @@ from base import *
 from dotenv import load_dotenv
 from io import BytesIO, StringIO
 from state import session_state
-load_dotenv()  # Load environment variables from .env file
+load_dotenv(dotenv_path="mcp.env")  # Load environment variables from .env file
 from typing import Optional
 import logging
 from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException,Query
@@ -60,6 +60,7 @@ from bill_datas import invoice_data, awb_data, packing_data,renuka_data
 import os
 from io import BytesIO
 from werkzeug.utils import secure_filename
+from fastapi.middleware.cors import CORSMiddleware
 
 
 from fastapi import FastAPI, HTTPException, Depends, status, Form
@@ -90,6 +91,14 @@ AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")
 AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Or specify your frontend origin, e.g., ["http://localhost:3000"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
