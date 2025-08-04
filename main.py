@@ -7,7 +7,7 @@ from base import *
 from dotenv import load_dotenv
 from io import BytesIO, StringIO
 from state import session_state
-load_dotenv(dotenv_path="mcp.env")  # Load environment variables from .env file
+load_dotenv()  # Load environment variables from .env file
 from typing import Optional
 import logging
 from fastapi import FastAPI, Request, Form, File, UploadFile, HTTPException,Query
@@ -60,7 +60,6 @@ from bill_datas import invoice_data, awb_data, packing_data,renuka_data
 import os
 from io import BytesIO
 from werkzeug.utils import secure_filename
-from fastapi.middleware.cors import CORSMiddleware
 
 
 from fastapi import FastAPI, HTTPException, Depends, status, Form
@@ -92,14 +91,6 @@ AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Or specify your frontend origin, e.g., ["http://localhost:3000"]
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -109,7 +100,6 @@ app.mount("/stats", StaticFiles(directory="stats"), name="stats")
 templates = Jinja2Templates(directory="templates")
 
 # Initialize OpenAI API key and model
-
 question_dropdown = os.getenv('Question_dropdown')
 llm = ChatOpenAI(model=models, temperature=0)  # Adjust model as necessary
 openai_client = openai.OpenAI(api_key=OPENAI_API_KEY)
@@ -165,26 +155,25 @@ def download_as_excel(data: pd.DataFrame, filename: str = "data.xlsx"):
         data.to_excel(writer, index=False, sheet_name='Sheet1')
     output.seek(0)
     return output
+from dotenv import load_dotenv
+load_dotenv()
+db_user = os.getenv("db_user")
+db_password = os.getenv("db_password")
+db_host=os.getenv("db_host")
+db_database=os.getenv("db_database")
+db_port=os.getenv("db_port")
 def get_db_connection():
+    """Use the same connection string that works in MCP"""
+    conn_str = "postgresql://postgres:Krushna%402003@localhost:5432/postgres"
     try:
-        conn = psycopg2.connect(
-            host=db_host,
-            database=db_database,
-            user=db_user,
-            password=db_password,
-            port=db_port
-        )
-        # Check if the connection is successful
-        conn.cursor().execute("SELECT 1")
-        print("Database connection established successfully.")
+        conn = psycopg2.connect(conn_str)
+        conn.autocommit = False
         return conn
-    except psycopg2.Error as e:
-        print(f"Error connecting to the database: {e}")
+    except psycopg2.OperationalError as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unable to connect to the database"
+            status_code=503,
+            detail=f"Failed to connect to database: {str(e)}"
         )
-
 get_db_connection()
 def escape_single_quotes(input_string):
     return input_string.replace("'","''")
@@ -368,24 +357,6 @@ def get_connection():
         port="5432"
     )
 
-# def try_multiple_formats(date_str):
-#     date_formats = [
-#         "%d/%m/%Y",
-#         "%d-%m-%Y",
-#         "%Y-%m-%d",
-#         "%d-%b-%Y",
-#         "%d-%b-%y",      # ✅ Supports 6-May-25
-#         "%b %d, %Y",
-#         "%d %B %Y",
-#         "%d.%m.%Y",
-#     ]
-#     for fmt in date_formats:
-#         try:
-#             return datetime.strptime(date_str.strip(), fmt).date()
-#         except ValueError:
-#             continue
-#     raise ValueError(f"Unrecognized date format: {date_str}")
-
 app = FastAPI()
 
 FIELD_MAP = {
@@ -396,60 +367,6 @@ FIELD_MAP = {
     "Total Amount (In Ruppees)": "total_amount",
     "GSTIN": "gstin"
 }
-
-# @app.post("/insert_invoices")
-# async def insert_invoices(request: Request):
-#     try:
-#         data = await request.json()
-
-#         conn = get_connection()
-#         cur = conn.cursor()
-
-#         for entry in data:
-#             row = {}
-#             for key, value in entry.items():
-#                 mapped_key = FIELD_MAP.get(key)
-#                 if mapped_key:
-#                     row[mapped_key] = value
-
-#             # ✅ Handle flexible date formats
-#             invoice_date = None
-#             if "invoice_date" in row and row["invoice_date"]:
-#                 try:
-#                     invoice_date = try_multiple_formats(row["invoice_date"])
-#                 except ValueError as e:
-#                     raise HTTPException(status_code=400, detail=str(e))
-
-#             # ✅ Insert data
-#             cur.execute("""
-#                 INSERT INTO Renuka_POC (
-#                     invoice_number,
-#                     invoice_date,
-#                     vendor_name,
-#                     description,
-#                     total_amount,
-#                     gstin
-#                 ) VALUES (%s, %s, %s, %s, %s, %s)
-#                 ON CONFLICT (invoice_number) DO NOTHING;
-#             """, (
-#                 row.get("invoice_number"),
-#                 invoice_date,
-#                 row.get("vendor_name"),
-#                 row.get("description"),
-#                 float(row.get("total_amount", "0").replace(",", "").strip()) if row.get("total_amount") else None,
-
-#                 row.get("gstin")
-#             ))
-
-#         conn.commit()
-#         cur.close()
-#         conn.close()
-
-#         return {"message": "Invoice data inserted successfully!"}
-
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
-
 
 @app.post("/add_to_faqs/")
 async def add_to_faqs(
@@ -531,9 +448,9 @@ async def login(
         cur.execute(
             sql.SQL("""
                 SELECT u.user_id, u.full_name, r.role_name
-                FROM lz_users u
-                JOIN lz_user_roles ur ON u.user_id = ur.user_id
-                JOIN lz_roles r ON ur.role_id = r.role_id
+                FROM "Management".lz_users u
+                JOIN "Management".lz_user_roles ur ON u.user_id = ur.user_id
+                JOIN "Management".lz_roles r ON ur.role_id = r.role_id
                 WHERE u.email = %s AND u.password_hash = %s
             """),
             (email, password)
@@ -607,13 +524,6 @@ def generate_chart_figure(data_df: pd.DataFrame, x_axis: str, y_axis: str, chart
     elif chart_type == "Funnel Chart":
         fig = px.funnel(data_df, x=x_axis, y=y_axis)
     return fig
-
-# @app.get("/", response_class=HTMLResponse)
-# async def user_page(request: Request):
-#     return templates.TemplateResponse("index.html", {"request": request})
-
-
-
 
 @app.post("/generate-chart/")
 async def generate_chart(request: ChartRequest):
@@ -890,75 +800,72 @@ def display_table_with_styles(data, table_name):
 
 
 # Invocation Function
-def invoke_chain(question, messages, selected_model, selected_subject, selected_tools):
+# Replace the invoke_chain function with this ADK-compatible version
+async def invoke_chain(question, messages, selected_model, selected_subject, selected_tools):
     try:
-        print(selected_tools)
-        history = ChatMessageHistory()
-        for message in messages:
-            if message["role"] == "user":
-                history.add_user_message(message["content"])
-            else:
-                history.add_ai_message(message["content"])
-
-        runner = graph.compile()
-        result = runner.invoke({
-            'question': question,
-            'messages': history.messages,
-            'selected_model': selected_model,
-            'selected_subject': selected_subject,
-            'selected_tools': selected_tools
-        })
-
-        print(f"Result from runner.invoke:", result)
-
-        # Initialize response with common fields
+        print("Selected tools:", selected_tools)
+        
+        # Initialize the ADK workflow
+        await run_adk_workflow_async(question)
+        
+        # Get the conversation history from the group chat
+        conversation_history = groupchat.messages
+        
+        # Process the conversation history to extract relevant information
         response = {
-            "messages": result.get("messages", []),
-            "follow_up_questions": {}
+            "messages": [],
+            "follow_up_questions": {},
+            "intent": "unknown"
         }
-
-        # Extract follow-up questions from all messages
-        for message in result.get("messages", []):
-            if hasattr(message, 'content'):
-                content = message.content
-                # Try to extract JSON from code block
-                json_match = re.search(r'json\n({.*?})\n', content, re.DOTALL)
-                if json_match:
-                    try:
-                        data = json.loads(json_match.group(1))
-                        for key, value in data.items():
-                            if key.startswith('follow_up_') and value:
-                                response["follow_up_questions"][key] = value
-                    except json.JSONDecodeError as e:
-                        print(f"Error parsing JSON from message: {e}")
-
-        # Handle different intents
-        if result.get("SQL_Statement"):
-            print("Intent Classification: db_query")
-            response.update({
-                "intent": "db_query",
-                "SQL_Statement": result.get("SQL_Statement"),
-                "chosen_tables": result.get("chosen_tables", []),
-                "tables_data": result.get("tables_data", {}),
-                "db": result.get("db")
+        
+        # Analyze each message in the conversation
+        for message in conversation_history:
+            if message['name'] == 'User_Proxy':
+                continue  # Skip user messages
+                
+            content = message.get('content', '')
+            response['messages'].append({
+                'role': 'assistant',
+                'content': content,
+                'name': message['name']
             })
-        elif result.get("messages") and len(result["messages"]) > 0:
-            last_message = result["messages"][-1]
-            if hasattr(last_message, 'name'):
-                print(f"Intent Classification: {last_message.name}")
-                response.update({
-                    "intent": last_message.name,
-                    "search_results": last_message.content
-                })
-            else:
-                print("Intent Classification: Unknown (no message name)")
-                response.update({
-                    "intent": "unknown",
-                    "message": "This intent is not yet implemented."
-                })
-
-        print("Final response with follow-ups:", response)
+            
+            # Determine intent based on which agent responded
+            if message['name'] == 'Database_Expert':
+                response['intent'] = "db_query"
+                # Extract SQL statement if present
+                if 'SELECT' in content or 'FROM' in content:
+                    response['SQL_Statement'] = content
+            elif message['name'] == 'Search_Expert':
+                response['intent'] = "researcher"
+                response['search_results'] = content
+            elif message['name'] == 'Document_Expert':
+                response['intent'] = "intellidoc"
+                response['search_results'] = content
+                
+            # Extract follow-up questions from the content
+            follow_ups = extract_follow_ups(content)
+            if follow_ups:
+                response['follow_up_questions'].update(follow_ups)
+        
+        # For database queries, we need to simulate the table data response
+        if response['intent'] == "db_query":
+            # This would normally come from actual database results
+            # For now, we'll simulate it with empty data
+            response['chosen_tables'] = ["simulated_table"]
+            response['tables_data'] = {
+                "simulated_table": pd.DataFrame(columns=['col1', 'col2'])
+            }
+            response['db'] = "postgres"
+            
         return response
+
+    except Exception as e:
+        print("Error in ADK workflow:", e)
+        return {
+            "error": str(e),
+            "message": "Error processing your request"
+        }
 
     except Exception as e:
         print("Error:", e)
@@ -986,25 +893,18 @@ async def submit_query(
     session_state['messages'].append({"role": "user", "content": prompt})
 
     try:
-        result = invoke_chain(
-            prompt, session_state['messages'], "gpt-4o-mini", selected_subject, tool_selected
+        result = await invoke_chain(
+            prompt, 
+            session_state['messages'], 
+            "gpt-4o-mini", 
+            selected_subject, 
+            tool_selected
         )
 
         response_data = {
             "user_query": session_state['user_query'],
-            "follow_up_questions": {}  # Initialize as empty
+            "follow_up_questions": result.get("follow_up_questions", {})
         }
-
-        # Extract follow-up questions from all messages
-        if "messages" in result:
-            for message in result["messages"]:
-                if hasattr(message, 'content'):
-                    content = message.content
-                    print(f"Message content for follow-up extraction: {content}")  # Debug
-                    follow_ups = extract_follow_ups(content)
-                    print(f"Extracted follow-ups: {follow_ups}")  # Debug
-                    if follow_ups:
-                        response_data["follow_up_questions"].update(follow_ups)
 
         # Handle different intents
         if result["intent"] == "db_query":
@@ -1019,35 +919,32 @@ async def submit_query(
                     "table_name": table_name,
                     "table_html": html_table,
                 })
+
+            # Generate insights if tables were returned
             chat_insight = None
             if result["chosen_tables"]:
-
                 insights_prompt = insight_prompt.format(
                     sql_query=result["SQL_Statement"],
                     table_data=result["tables_data"]
                 )
-
                 chat_insight = llm.invoke(insights_prompt).content
-
 
             response_data.update({
                 "query": session_state['generated_query'],
                 "tables": tables_html,
-                "chat_insight":chat_insight
+                "chat_insight": chat_insight
             })
 
         elif result["intent"] == "researcher":
             response_data["search_results"] = result.get("search_results", "No results found.")
-
         elif result["intent"] == "intellidoc":
             response_data["search_results"] = result.get("search_results", "No results found.")
 
-        print(f"Final response data with follow-ups: {response_data}")  # Debug
         return JSONResponse(content=response_data)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing the prompt: {str(e)}")
-
+    
 @app.get("/get_table_data/")
 async def get_table_data(
     table_name: str = Query(...),
