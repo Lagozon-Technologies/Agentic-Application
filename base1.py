@@ -34,16 +34,64 @@ from langchain.agents import Tool, initialize_agent, AgentType
 from langchain.memory import ConversationBufferMemory
 from dotenv import load_dotenv
 
+# ADK imports
+from google.adk.agents.llm_agent import LlmAgent
+from google.adk.events import Event
+from google.genai.types import Content, Part
+from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset, StdioConnectionParams
 
 import chromadb
 import os
 import json
 load_dotenv()
+
+# Initialize ADK Postgres Agent
+class PostgresAgent(LlmAgent):
+    def __init__(self):
+        super().__init__(
+            name="postgres_explorer_agent",
+            description="Explore and query your local PostgreSQL database.",
+            instruction="You are a PostgreSQL expert. Help the user explore and query the database using the available tools."
+        )
+        self._agent = None
+
+    async def _initialize_llm_agent(self):
+        if self._agent:
+            return self._agent
+
+        connection_params = StdioConnectionParams(
+            server_params={
+                "command": "python",
+                "args": ["C:/Krushna/Work/Reddit_MCP/mcp-postgres/mcp-postgres/postgres_server.py"],
+                "timeout": 60.0
+            }
+        )
+
+        toolset = MCPToolset(connection_params=connection_params)
+        tools = await toolset.get_tools()
+
+        llm_agent = LlmAgent(
+            name=self.name,
+            model="gemini-2.5-flash-preview-04-17",
+            instruction=self.instruction,
+            tools=tools
+        )
+
+        self._agent = llm_agent
+        return llm_agent
+
+    async def _run_async_impl(self, context):
+        agent = await self._initialize_llm_agent()
+        async for event in agent.run_async(context):
+            yield event
+
+# Initialize the ADK agent
+root_agent = PostgresAgent()
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 db_user = os.getenv("db_user")
 db_password = os.getenv("db_password")
 db_host=os.getenv("db_host")
-#db_warehouse=os.getenv("db_warehouse")
 db_database=os.getenv("db_database")
 db_port=os.getenv("db_port")
 schema="public"
@@ -54,14 +102,7 @@ adv_db_schema_hr = os.getenv("adv_db_schema_hr")
 adv_db_schema_pe = os.getenv("adv_db_schema_pe")
 adv_db_schema_purchase = os.getenv("adv_db_schema_purchase")
 adv_db_schema_sales = os.getenv("adv_db_schema_sales")
-user = os.getenv("user")
-password = os.getenv("password")
-host=os.getenv("host")
-#db_warehouse=os.getenv("db_warehouse")
-dbname=os.getenv("dbname")
-port=os.getenv("port")
-#table_details_prompt = os.getenv('TABLE_DETAILS_PROMPT')
-# Change if your schema is different
+
 DOCSTORE = os.getenv("DOCSTORE").split(",")
 COLLECTION = os.getenv("COLLECTION").split(",")
 Chroma_DATABASE = os.getenv("Chroma_DATABASE").split(",")
@@ -86,16 +127,13 @@ class GraphState(TypedDict):
     SQL_Statement: str
     tables_data: dict
     selected_tools: list[str]  # Now a list of tools
-
-
+    intent: str  # Added intent field
 
 def classify_intent(state: GraphState) -> str:
     llm = ChatOpenAI(model='gpt-4o-mini', temperature=0)
     user_question = state["messages"][-1].content
 
-    # FIX: Use correct key name "selected_tools"
-    tool_selected = state.get("selected_tools", ["all"])  # ✅ Changed key
-
+    tool_selected = state.get("selected_tools", ["all"])
 
     intent_prompt = f"""You are an intent classifier. Your job is to determine which agent is most appropriate to answer the user's question.
     The possible agents are:
@@ -107,7 +145,6 @@ def classify_intent(state: GraphState) -> str:
     Return the name of the agent only.
     """
 
-    # Add a note about available tools
     if "all" not in tool_selected:
         available_tools = ", ".join(tool_selected)
         intent_prompt += f"\nNote: Only the following agents are available: {available_tools}."
@@ -115,9 +152,7 @@ def classify_intent(state: GraphState) -> str:
     intent_chain = RunnablePassthrough() | llm | StrOutputParser()
     intent = intent_chain.invoke([HumanMessage(content=intent_prompt)]).strip().lower()
 
-    # Validate the intent against the selected tools
     if "all" not in tool_selected and intent not in tool_selected:
-        # If the intent is not in the selected tools, default to the first tool in the list
         intent = tool_selected[0]
 
     print(f"Intent Classification: {intent}")
@@ -125,7 +160,6 @@ def classify_intent(state: GraphState) -> str:
 
 BING_API_KEY = os.getenv("BING_API_KEY")
 
-# Bing Search Tool
 def bing_search(query: str) -> str:
     """Query Bing Search API to get summarized search results."""
     api_key = os.getenv('BING_API_KEY')
@@ -145,21 +179,15 @@ def bing_search(query: str) -> str:
     else:
         return f"Error: {response.status_code}"
 
-
 bing_tool = Tool(
     name="Bing Search",
     func=bing_search,
     description="Useful for general web searches."
 )
 
-
-
 tools = [bing_tool]
-
-# Initialize memory
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-# Initialize agent
 llm = ChatOpenAI(
     api_key=OPENAI_API_KEY,
     model="gpt-4o-mini",
@@ -169,7 +197,7 @@ llm = ChatOpenAI(
 agent = initialize_agent(
     tools=tools,
     llm=llm,
-    agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,  # Better for conversations
+    agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
     memory=memory,
     verbose=True
 )
@@ -194,31 +222,23 @@ def researcher_node(state: GraphState) -> dict:
         ]
     }
 
-
 def hybrid_retrieve(query, docstore, vector_index, bm25_retriever, alpha=0.5):
     """Perform hybrid retrieval using BM25 and vector-based retrieval."""
-    # Get results from BM25
     try:
         bm25_results = bm25_retriever.retrieve(query)
-        # Get results from the vector store
         vector_results = vector_index.as_retriever(similarity_top_k=2).retrieve(query)
     except Exception as e:
         logging.error(e)
         return JSONResponse("Error with retriever")
-    # Combine results with weighting
+    
     combined_results = {}
-    # Weight BM25 results
     for result in bm25_results:
         combined_results[result.id_] = combined_results.get(result.id_, 0) + (1 - alpha)
-    # Weight vector results
     for result in vector_results:
         combined_results[result.id_] = combined_results.get(result.id_, 0) + alpha
 
-    # Sort results based on the combined score
     sorted_results = sorted(combined_results.items(), key=lambda x: x[1], reverse=True)
-    # Return the top N results
     return [docstore.get_document(doc_id) for doc_id, _ in sorted_results[:4]]
-
 
 def init_chroma_collection(db_path, collection_name):
     try:
@@ -230,22 +250,12 @@ def init_chroma_collection(db_path, collection_name):
         logging.error(f"Error initializing Chroma collection: {e}")
         raise
 
-
-
 def intellidoc_tool(department: str, query_text: str):
     """
     Intellidoc Tool: Processes a query for a given department and returns the response.
-
-    Args:
-        department (str): The department for which the query is being processed.
-        query_text (str): The user's query.
-
-    Returns:
-        Tuple[str, str, str]: A tuple containing the query_text, response_text, and source.
     """
     print(department)
     try:
-        # Map the department to its index in the lists
         DEPARTMENT_TO_INDEX = {
                 "Adv-Manufacturing": 0,
                 "Adv-Inventory": 1,
@@ -275,7 +285,6 @@ def intellidoc_tool(department: str, query_text: str):
         if not os.path.exists(docstore_file):
             return query_text, f"Document store not found for {department}.", ""
 
-        # Proceed with querying the documents
         collection = init_chroma_collection(db_path, collection_name)
         if "documents" in collection.get() and len(collection.get()['documents']) > 0:
             vector_store = ChromaVectorStore(chroma_collection=collection)
@@ -307,13 +316,12 @@ def intellidoc_tool(department: str, query_text: str):
             result = vector_index.as_query_engine(text_qa_template=text_qa_template, llm=OpenAI(model=LLM_MODEL)).query(query_text)
             response_text = result.response
             print("Response Text:",response_text)
-            source = " and ".join(ids)  # Default to joining IDs
+            source = " and ".join(ids)
 
-            # Check if any instruction is present in the response
             for instruction in METADATA_INSTRUCTION:
                 if instruction in str(response_text).lower():
                     source = NO_METADATA
-                    break  # Exit the loop if a match is found
+                    break
 
             return query_text, response_text, source
 
@@ -323,23 +331,17 @@ def intellidoc_tool(department: str, query_text: str):
         logging.error(f"Error in intellidoc_tool: {e}")
         return query_text, "Failed to process your request. Please try again from relevant tool", ""
 
-
-# Define the intellidoc node
 def intellidoc_node(state: GraphState) -> dict:
     """
     Handles the intellidoc intent by retrieving information from documents.
     """
-    user_question = state["messages"][-1].content  # Get the last user message
-    department = state.get("selected_subject", "human_resources")  # Default to human_resources if not specified
+    user_question = state["messages"][-1].content
+    department = state.get("selected_subject", "human_resources")
 
-    # Use the intellidoc tool to retrieve information
     search_results = intellidoc_tool(department, user_question)
 
-    # Unpack the results correctly
     query_text, response_text, source = search_results
-    # Format the results into a single string for HumanMessage content
     formatted_content = f"{response_text}\n\nSource: {source}"
-    # Use the intellidoc tool to retrieve information
 
     return {
         "messages": [
@@ -347,8 +349,6 @@ def intellidoc_node(state: GraphState) -> dict:
         ]
     }
 
-
-# Define Node Functions
 def extract_tables(data: GraphState) -> dict:
     question = data['question']
     selected_subject = data.get('selected_subject', 'Adv-HumanResources')
@@ -365,13 +365,47 @@ def extract_tables(data: GraphState) -> dict:
 
     return {'chosen_tables': chosen_tables, 'question': question, 'selected_model': 'gpt-4o-mini', 'selected_subject': selected_subject, 'messages': data['messages']}
 
+async def generate_sql_with_adk(data: GraphState) -> dict:
+    """Generate SQL using ADK agent"""
+    try:
+        context = {
+            "question": data['question'],
+            "selected_subject": data['selected_subject'],
+            "chosen_tables": data['chosen_tables']
+        }
+        
+        result = {
+            "SQL_Statement": "",
+            "tables_data": {},
+            "messages": []
+        }
+        
+        async for event in root_agent.run_async(context):
+            if event.type == "sql_query":
+                result["SQL_Statement"] = event.data.get("query", "")
+            elif event.type == "query_result":
+                table_name = event.data.get("table_name", "result")
+                df = pd.DataFrame(event.data.get("data", []))
+                result["tables_data"][table_name] = df
+            elif event.type == "message":
+                result["messages"].append(HumanMessage(content=event.data.get("content", "")))
+        
+        return {
+            **data,
+            "SQL_Statement": result["SQL_Statement"],
+            "db": None,  # ADK handles the DB connection
+            "tables_data": result["tables_data"]
+        }
+    except Exception as e:
+        print(f"Error in generate_sql_with_adk: {str(e)}")
+        raise
 
-def generate_sql(data: GraphState)-> dict:
+def generate_sql(data: GraphState) -> dict:
+    """Generate SQL using traditional method (fallback)"""
     selected_subject = data['selected_subject']
-    print("This is selectedddd subject:",selected_subject)
+    print("This is selected subject:", selected_subject)
 
     if selected_subject.startswith('Adv'):
-
         if selected_subject.endswith('HumanResources'):
             db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}'
                     ,schema=adv_db_schema_hr
@@ -380,7 +414,6 @@ def generate_sql(data: GraphState)-> dict:
                     ,sample_rows_in_table_info=1
                     ,lazy_table_reflection=True
                     )
-            print("DB Connection Done for Adventureworks----",db._schema)
         elif selected_subject.endswith('Purchasing'):
             db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}'
                     ,schema=adv_db_schema_purchase
@@ -389,7 +422,6 @@ def generate_sql(data: GraphState)-> dict:
                     ,sample_rows_in_table_info=1
                     ,lazy_table_reflection=True
                     )
-            print("DB Connection Done for Adventureworks----",db._schema)
         elif selected_subject.endswith('Sales'):
             db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}'
                     ,schema=adv_db_schema_sales
@@ -398,8 +430,6 @@ def generate_sql(data: GraphState)-> dict:
                     ,sample_rows_in_table_info=1
                     ,lazy_table_reflection=True
                     )
-            print("DB Connection Done for Adventureworks----",db._schema)
-
         else:
             db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}'
                                 ,schema=adv_db_schema
@@ -408,20 +438,14 @@ def generate_sql(data: GraphState)-> dict:
                                 ,sample_rows_in_table_info=1
                                 ,lazy_table_reflection=True
                                 )
-            print("DB Connection Done for Adventureworks----",db._schema)
-
     else:
-        db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{dbname}'
+        db = SQLDatabase.from_uri(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}'
                                 ,schema=schema
                                 ,include_tables= data['chosen_tables']
                                 , view_support=True
                                 ,sample_rows_in_table_info=1
                                 ,lazy_table_reflection=True
                                 )
-        print(user, password, host, port, dbname)
-        print("DB Connection Done for PostGress---",db._schema)
-        #for testing of synapse
-
 
     llm = ChatOpenAI(model=data['selected_model'], temperature=0)
     print("Generate Query Starting")
@@ -432,16 +456,51 @@ def generate_sql(data: GraphState)-> dict:
 
     return {'SQL_Statement': SQL_Statement, 'db': db, 'chosen_tables': data['chosen_tables'], 'question': data['question'], 'messages': data['messages']}
 
+async def execute_sql(data: GraphState) -> dict:
+    """Execute SQL using ADK or traditional method based on intent"""
+    if data.get('intent') == 'db_query':
+        # Use ADK for execution
+        try:
+            context = {
+                "question": data['question'],
+                "SQL_Statement": data['SQL_Statement'],
+                "selected_subject": data['selected_subject']
+            }
+            
+            result = {
+                "tables_data": {},
+                "messages": []
+            }
+            
+            async for event in root_agent.run_async(context):
+                if event.type == "query_result":
+                    table_name = event.data.get("table_name", "result")
+                    df = pd.DataFrame(event.data.get("data", []))
+                    result["tables_data"][table_name] = df
+                elif event.type == "message":
+                    result["messages"].append(HumanMessage(content=event.data.get("content", "")))
+            
+            return {
+                **data,
+                "tables_data": result["tables_data"],
+                "messages": result["messages"]
+            }
+        except Exception as e:
+            print(f"ADK execution failed, falling back to traditional method: {str(e)}")
+            return await execute_sql_traditional(data)
+    else:
+        return await execute_sql_traditional(data)
 
-def execute_sql(data: GraphState) -> dict:
+async def execute_sql_traditional(data: GraphState) -> dict:
+    """Traditional SQL execution method"""
     print("dataaaa:", data)
     selected_subject = data['selected_subject']
-    SQL_Statement = data['SQL_Statement'].replace("SQL Query:", "").strip()
+    SQL_Statement = data['SQL_Statement'].replace("SQL Query:", "").strip("")
 
     if selected_subject.startswith('Adv'):
         alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{adv_db_database}')
     else:
-        alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{dbname}')
+        alchemyEngine = create_engine(f'postgresql+psycopg2://{quote_plus(db_user)}:{quote_plus(db_password)}@{db_host}:{db_port}/{db_database}')
 
     tables_data = {}
     for table in data['chosen_tables']:
@@ -449,18 +508,15 @@ def execute_sql(data: GraphState) -> dict:
         print(f"Executing SQL Query: {query}")
         with alchemyEngine.connect() as conn:
             df = pd.read_sql(sql=query, con=conn.connection)
-            # 👉 Format 'month' if it is a float (e.g., from EXTRACT(MONTH...))
             if 'month' in df.columns:
                 if pd.api.types.is_float_dtype(df['month']):
                     df['month'] = df['month'].astype(int)
 
-        # 👉 Format all datetime columns to show only date
             for col in df.select_dtypes(include=['datetime64[ns]', 'datetime64[ns, UTC]']).columns:
                     df[col] = df[col].dt.date
             tables_data[table] = df
-            break  # Execute only once as in the original code
+            break
 
-    # Create the rephrasing chain
     llm = ChatOpenAI(model=data['selected_model'], temperature=0)
 
     rephrase_answer = (
@@ -483,11 +539,10 @@ def execute_sql(data: GraphState) -> dict:
         )
     )
 
-    # Invoke the chain
     response = rephrase_answer.invoke({
         "question": data['question'],
         "query": SQL_Statement,
-        "result": df,  # The pandas DataFrame result
+        "result": df,
         "answer": "",
         "follow_up_1": "",
         "follow_up_2": "",
@@ -495,7 +550,6 @@ def execute_sql(data: GraphState) -> dict:
     })
 
     try:
-        # Parse the JSON response
         response_data = json.loads(response["answer"])
         formatted_answer = response_data["answer"]
         follow_ups = [
@@ -504,7 +558,6 @@ def execute_sql(data: GraphState) -> dict:
             response_data["follow_up_3"]
         ]
     except json.JSONDecodeError:
-        # Fallback if JSON parsing fails
         formatted_answer = response["answer"]
         follow_ups = []
 
@@ -517,7 +570,6 @@ def execute_sql(data: GraphState) -> dict:
             *[HumanMessage(content=fq, name="follow_up") for fq in follow_ups]
         ]
     }
-
 
 graph = StateGraph(GraphState)
 print("Graph Created")
@@ -532,13 +584,11 @@ graph.add_node("intellidoc", intellidoc_node)
 # Add edges
 graph.add_edge(START, "classify_intent")
 
-# Conditional edges based on intent and tool_selected
 def conditional_edges(state: GraphState):
     intent = state["intent"]
     tool_selected = state.get("tool_selected", ["all"])
 
     if "all" in tool_selected:
-        # All tools are available
         if intent == "db_query":
             return "extract_tables"
         elif intent == "researcher":
@@ -546,7 +596,6 @@ def conditional_edges(state: GraphState):
         elif intent == "intellidoc":
             return "intellidoc"
     else:
-        # Only specific tools are available
         if intent in tool_selected:
             if intent == "db_query":
                 return "extract_tables"
@@ -555,10 +604,9 @@ def conditional_edges(state: GraphState):
             elif intent == "intellidoc":
                 return "intellidoc"
         else:
-            # If the intent is not in the selected tools, default to the first tool in the list
             return tool_selected[0]
 
-    return END  # Default to end if no matching intent
+    return END
 
 graph.add_conditional_edges("classify_intent", conditional_edges)
 
